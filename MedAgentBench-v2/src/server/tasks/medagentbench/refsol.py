@@ -351,10 +351,8 @@ def task3(case_data, results, fhir_api_base):
             try:
                 parsed = json.loads(raw)
             except Exception:
-                print("Failed to parse agent result:", raw)
                 return False
         if not isinstance(parsed, (list, tuple)) or len(parsed) != 2:
-            print("Unexpected result shape:", parsed)
             return False
         agent_avg_6h, agent_avg_12h = parsed
 
