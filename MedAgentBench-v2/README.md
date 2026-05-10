@@ -86,6 +86,16 @@ python -m src.skillx_cycle --config configs/skillx_cycle_gpt54mini.yaml  --run-n
 python -m src.skillx_cycle --config configs/skillx_cycle_gpt54nano.yaml  --run-name run_001
 ```
 
+**Resuming an interrupted run:**
+
+If a run is interrupted (API timeout, machine restart, etc.), resume it with the same `--run-name` and add `--resume`. Completed epochs and dev batches are skipped automatically.
+
+```bash
+python -m src.skill_cycle --config configs/skill_cycle_gpt41.yaml --run-name run_001 --resume
+```
+
+The `--resume` flag works identically for all six cycle types.
+
 ## Test set evaluation
 
 Test set evaluation runs **automatically** at the end of every cycle. Results are written directly into the run directory:
