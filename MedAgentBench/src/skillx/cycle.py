@@ -64,6 +64,15 @@ class SkillXCycleRunner(BatchMemoryCycleRunner):
                 "SkillX library snapshot saved"
             )
 
+    def _make_best_agent(self):
+        best_library = self.run_dir / "skillx_library_best.json"
+        if not best_library.exists():
+            return None
+        from src.typings.general import InstanceFactory
+        base_agent = InstanceFactory(**self.config["agent"]).create()
+        top_k = self.config.get("skillx", {}).get("retrieval_top_k", 5)
+        return SkillXAwareAgent(base_agent, best_library, top_k=top_k)
+
     def _run_epoch(self, epoch: int) -> float:
         epoch_dir = self.run_dir / f"epoch_{epoch}"
         epoch_dir.mkdir(parents=True, exist_ok=True)

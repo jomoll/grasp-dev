@@ -29,6 +29,7 @@ data:
   full: "data/medagentbench/test_data_v2.json"
   dev:  "data/medagentbench/split_dev.json"
   val:  "data/medagentbench/split_val.json"
+  test: "data/medagentbench/split_test.json"
 
 expel:
   max_num_rules: 20

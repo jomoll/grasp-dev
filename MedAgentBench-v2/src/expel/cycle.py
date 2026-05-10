@@ -59,6 +59,22 @@ class ExPeLCycleRunner(BatchMemoryCycleRunner):
                 "ExpeL rules snapshot saved"
             )
 
+    def _make_best_agent(self):
+        rules_best = self.run_dir / "expel_rules_best.json"
+        if not rules_best.exists():
+            return None
+        from src.typings.general import InstanceFactory
+        base_agent = InstanceFactory(**self.config["agent"]).create()
+        store_best = self.run_dir / "expel_store_best.json"
+        lm_adapter = ExPeLLMAdapter(base_agent)
+        best_adapter = ExPeLPipelineAdapter(
+            lm_adapter=lm_adapter,
+            rules_path=rules_best,
+            store_path=store_best if store_best.exists() else self.run_dir / "expel_store.json",
+            config=self.config.get("expel", {}),
+        )
+        return ExPeLAwareAgent(base_agent, best_adapter)
+
     def _run_epoch(self, epoch: int) -> float:
         epoch_dir = self.run_dir / f"epoch_{epoch}"
         epoch_dir.mkdir(parents=True, exist_ok=True)

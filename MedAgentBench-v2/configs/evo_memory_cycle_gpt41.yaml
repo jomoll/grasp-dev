@@ -27,6 +27,7 @@ data:
   full: "data/medagentbench/new_patient_tasks.json"
   dev:  "data/medagentbench/split_dev.json"
   val:  "data/medagentbench/split_val.json"
+  test: "data/medagentbench/split_test.json"
 
 evo_memory:
   episodic_enabled: true

@@ -57,6 +57,14 @@ class EvoMemoryCycleRunner(BatchMemoryCycleRunner):
                 "Evo memory snapshot saved"
             )
 
+    def _make_best_agent(self):
+        if not self._best_memory_dir.exists():
+            return None
+        from src.typings.general import InstanceFactory
+        base_agent = InstanceFactory(**self.config["agent"]).create()
+        best_core = EvoMemoryCore(self._best_memory_dir, self.config.get("evo_memory", {}))
+        return EvoMemoryAwareAgent(base_agent, best_core)
+
     def _run_epoch(self, epoch: int) -> float:
         epoch_dir = self.run_dir / f"epoch_{epoch}"
         epoch_dir.mkdir(parents=True, exist_ok=True)

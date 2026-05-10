@@ -64,6 +64,7 @@ def main():
     from src.memory.cycle import BatchMemoryCycleRunner
     runner = BatchMemoryCycleRunner(config=config, run_dir=run_dir)
     runner.run()
+    runner.run_test_eval()
 
 
 if __name__ == "__main__":

@@ -1412,6 +1412,77 @@ class SkillCycleRunner:
         return score
 
     # ------------------------------------------------------------------
+    # Test-set evaluation
+    # ------------------------------------------------------------------
+
+    def _eval_split_with_agent(self, agent, data: List[Dict], out_dir: Path) -> float:
+        from src.client.task import TaskError
+        out_dir.mkdir(parents=True, exist_ok=True)
+        total = len(data)
+        entries: List[Optional[Dict]] = [None] * total
+
+        def run_one(idx: int, sample: Dict):
+            original_index = self._id_to_index[sample["id"]]
+            for attempt in range(3):
+                result = self.task_client.run_sample(original_index, agent)
+                if result.error != TaskError.NOT_AVAILABLE.value:
+                    break
+                time.sleep(5 * (attempt + 1))
+            is_correct = _score_result(sample, result, self.fhir_api_base)
+            return idx, is_correct, result
+
+        with ThreadPoolExecutor(max_workers=self.batch_concurrency) as pool:
+            futures = {pool.submit(run_one, i, s): i for i, s in enumerate(data)}
+            for future in as_completed(futures):
+                idx, is_correct, result = future.result()
+                entries[idx] = {
+                    "sample_id": data[idx]["id"],
+                    "is_correct": is_correct,
+                    "status": result.output.status if result.output else result.error,
+                }
+
+        n_correct = sum(e["is_correct"] for e in entries if e)
+        score = n_correct / total if total > 0 else 0.0
+
+        with open(out_dir / "test_runs.jsonl", "w", encoding="utf-8") as f:
+            for e in entries:
+                f.write(json.dumps(e, ensure_ascii=False) + "\n")
+
+        summary = {"split": "test", "score": score, "n_correct": n_correct, "n_total": total}
+        with open(out_dir / "test_score.json", "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2)
+
+        return score
+
+    def run_test_eval(self) -> None:
+        test_path = self.config.get("data", {}).get("test")
+        if not test_path:
+            print("[TestEval] Skipped: no 'test' split configured.")
+            return
+
+        test_data = _load_required_json_list(Path(test_path), "test split")
+        print(f"\n[TestEval] Running test set evaluation ({len(test_data)} samples)...")
+
+        # skills/learned/ was restored from skills/best/ at end of _run_inner
+        final_dir = self.run_dir / "test_eval_final"
+        print(f"[TestEval] Final skills (skills/learned/) → {final_dir}")
+        final_score = self._eval_split_with_agent(self.skill_aware_agent, test_data, final_dir)
+        print(f"[TestEval] Final: {final_score:.1%}")
+
+        if self._best_skills_dir.exists():
+            best_repo = SkillRepository(
+                base_dir=self.skill_repo.base_dir,
+                learned_dir=self._best_skills_dir,
+            )
+            best_agent = SkillAwareAgent(self.skill_aware_agent.agent, best_repo)
+            best_dir = self.run_dir / "test_eval_best"
+            print(f"[TestEval] Best checkpoint (skills/best/) → {best_dir}")
+            best_score = self._eval_split_with_agent(best_agent, test_data, best_dir)
+            print(f"[TestEval] Best: {best_score:.1%}")
+        else:
+            print("[TestEval] No best checkpoint; skipping best-checkpoint eval.")
+
+    # ------------------------------------------------------------------
     # Reporting
     # ------------------------------------------------------------------
 
