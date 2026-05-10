@@ -45,15 +45,15 @@ FHIR-AgentBench/
 - Download [MIMIC-IV Clinical Database Demo on FHIR](https://physionet.org/content/mimic-iv-fhir-demo/2.1.0/) from PhysioNet and extract the .gz files.
 - Create a GCP account, then in the [Google Cloud Console](https://console.cloud.google.com) search for FHIR Viewer.
 - Click Browser on the left, then Create dataset.
-![dataset creation](/images/create_dataset.png)
+![dataset creation](images/create_dataset.png)
 - Next, click Create data store to prepare for the data upload.
-![datastore creation](/images/create_data_store.png)
+![datastore creation](images/create_data_store.png)
 - For Configure your FHIR store, select R4 as the FHIR Version. Keep other settings as default and click Create.
 - Separately, in [Cloud Storage](https://console.cloud.google.com/storage), upload your unzipped folder containing the MIMIC-IV FHIR data (*.ndjson) to a bucket.
 - Back in the FHIR store, click Actions in the upper right and choose Import.
-![FHIR Data Store Import](/images/import_fhir.png)
+![FHIR Data Store Import](images/import_fhir.png)
 - Select the folder you uploaded. Under FHIR Import Settings, choose Resource for Content Structure. Click Import and grant permissions if prompted.
-![FHIR import settings](/images/fhir_import_settings.png)
+![FHIR import settings](images/fhir_import_settings.png)
 - Open the Import operation to confirm success. It usually completes in about 10 minutes.
 
 #### 2. Enable APIs and authenticate with gcloud
