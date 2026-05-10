@@ -60,6 +60,7 @@ def main():
     from skill_learning.memory_cycle import FHIRMemoryCycleRunner
     runner = FHIRMemoryCycleRunner(config=config, run_dir=run_dir)
     runner.run()
+    runner.run_test_eval()
 
 
 if __name__ == "__main__":

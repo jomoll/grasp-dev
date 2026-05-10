@@ -173,35 +173,102 @@ If `final_dataset/questions_answers_sql_fhir.csv` already exists, you can skip t
    python create_question_fhir_dataset.py
    ```
 
-## 🤖 Agent Execution
+## Model configuration
 
-The project includes several agent implementations:
+Edit the `model` and `base_url` fields in each config under `configs/` to point to your LiteLLM-compatible endpoint (local vLLM, LiteLLM proxy, or any OpenAI-compatible server):
 
-```bash
-# Single-turn agents
-bash scripts/run_single_turn_request_agent.sh       # Single-turn FHIR RESTful API generation and retrieval → Natural language reasoning
-bash scripts/run_single_turn_resource_agent.sh      # Single-turn FHIR resource retrieval → Natural language reasoning
-bash scripts/run_single_turn_code_resource_agent.sh # Single-turn FHIR resource retrieval → Code-based reasoning
-
-# Multi-turn agents
-bash scripts/run_multi_turn_resource_agent.sh       # Multi-turn/iterative resource retrieval → Natural language reasoning
-bash scripts/run_multi_turn_code_resource_agent.sh  # Multi-turn/iterative resource retrieval → Code-based reasoning
+```yaml
+agent:
+  model: "openai/<your-model-name>"
+  base_url: "http://<your-endpoint>/v1"
 ```
 
-To use open-source models locally with vLLM, start the vLLM server and set base_url to `http://localhost:<port>/v1`.
+The `updater` and `eval` sections in each config accept the same fields and can point to the same or a different endpoint.
+
+To start a local vLLM server:
 
 ```bash
-CUDA_VISIBLE_DEVICES=<gpu_ids> python -m vllm.entrypoints.openai.api_server --model <model> --load-format safetensors --max-model-len 32768 --tensor-parallel-size <num_gpus> --port <port> --enable-auto-tool-choice --tool-call-parser llama3_json
+CUDA_VISIBLE_DEVICES=<gpu_ids> python -m vllm.entrypoints.openai.api_server \
+  --model <model> --load-format safetensors --max-model-len 32768 \
+  --tensor-parallel-size <num_gpus> --port <port> \
+  --enable-auto-tool-choice --tool-call-parser llama3_json
 ```
 
-## 📊 Evaluation
+## Running experiments
 
-Run the following command to normalize, evaluate answers, and visualize performance (FHIR resource retrieval recall/precision, answer correctness):
+No separate task worker is needed — each cycle script connects directly to the GCP FHIR API.
+
+Replace `<run-name>` with a unique identifier for each run.
 
 ```bash
-python evaluation_metrics.py --input <agent_output_json_file_path>
+conda activate fhir-agentbench
+
+# skill_cycle
+python skill_cycle.py --config configs/skill_cycle_code.yaml --run-name run_001
+
+# memory_cycle
+python memory_cycle.py --config configs/memory_cycle.yaml --run-name run_001
+
+# batch_memory_cycle
+python batch_memory_cycle.py --config configs/batch_memory_cycle.yaml --run-name run_001
+
+# evo_memory_cycle
+python evo_memory_cycle.py --config configs/evo_memory_cycle.yaml --run-name run_001
+
+# expel_cycle
+python expel_cycle.py --config configs/expel_cycle.yaml --run-name run_001
+
+# skillx_cycle
+python skillx_cycle.py --config configs/skillx_cycle.yaml --run-name run_001
 ```
 
+**Resuming an interrupted run:**
+
+```bash
+python skill_cycle.py --config configs/skill_cycle_code.yaml --run-name run_001 --resume
+```
+
+The `--resume` flag works identically for all six cycle types.
+
+## Test set evaluation
+
+Test set evaluation runs **automatically** at the end of every cycle. Results are written into the run directory:
+
+```
+outputs/<method>/<run-name>/
+├── test_eval_best/
+│   ├── test_runs.jsonl
+│   └── test_score.json   # {split, score, n_correct, n_total}
+├── test_eval_final/
+│   ├── test_runs.jsonl
+│   └── test_score.json
+└── test_eval_baseline/   # skill_cycle only — no-skill baseline
+    ├── test_runs.jsonl
+    └── test_score.json
+```
+
+## Output structure
+
+```
+outputs/
+└── skill_cycle_code/
+    └── run_001/
+        ├── run.log
+        ├── val_scores.json
+        ├── test_eval_best/
+        │   ├── test_runs.jsonl
+        │   └── test_score.json
+        ├── test_eval_final/
+        │   ├── test_runs.jsonl
+        │   └── test_score.json
+        ├── test_eval_baseline/
+        │   ├── test_runs.jsonl
+        │   └── test_score.json
+        └── skills/
+            ├── learned/
+            └── best/
+```
 
 ## Authorship
+
 FHIR-AgentBench is a joint research effort between Verily Life Sciences, Korea Advanced Institute of Science & Technology (KAIST), and Massachusetts Institute of Technology (MIT).
