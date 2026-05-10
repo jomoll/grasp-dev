@@ -89,9 +89,21 @@ python -m src.skillx_cycle --config configs/skillx_cycle_gpt54mini.yaml  --run-n
 python -m src.skillx_cycle --config configs/skillx_cycle_gpt54nano.yaml  --run-name run_001
 ```
 
-## Evaluating on the test set
+## Test set evaluation
 
-After a skill_cycle run, evaluate the best learned skills on the held-out test set:
+Test set evaluation runs **automatically** at the end of every cycle. Results are written directly into the run directory:
+
+```
+outputs/<method>/<run-name>/
+├── test_eval_best/
+│   ├── test_runs.jsonl   # per-sample correctness, best-val checkpoint
+│   └── test_score.json   # {split, score, n_correct, n_total}
+└── test_eval_final/
+    ├── test_runs.jsonl   # per-sample correctness, final epoch
+    └── test_score.json
+```
+
+To run a standalone evaluation manually (e.g. for the base agent or a custom skill directory):
 
 ```bash
 # Base agent (no learned skills)
@@ -102,9 +114,7 @@ python -m src.run_eval --config configs/skill_cycle_gpt41.yaml --split test \
     --skills-dir outputs/skill_cycle_gpt41/run_001/skills/best --run-name run_001_best_test
 ```
 
-The task worker must be running. Results are written to `outputs/eval/<run-name>/`:
-- `test_runs.jsonl` — per-sample correctness
-- `test_score.json` — summary `{split, score, n_correct, n_total}`
+The task worker must be running for both automatic and manual evaluation.
 
 ## Data splits
 
@@ -122,7 +132,13 @@ outputs/
     └── run_001/
         ├── run.log
         ├── val_scores.json
+        ├── test_eval_best/     # test results using best-val checkpoint
+        │   ├── test_runs.jsonl
+        │   └── test_score.json
+        ├── test_eval_final/    # test results using final-epoch artifact
+        │   ├── test_runs.jsonl
+        │   └── test_score.json
         └── skills/
-            ├── learned/    # current skill library
-            └── best/       # best checkpoint by val score
+            ├── learned/        # current skill library
+            └── best/           # best checkpoint by val score
 ```

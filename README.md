@@ -57,3 +57,53 @@ See each benchmark's README for Docker setup and run commands:
 
 - [MedAgentBench/README.md](MedAgentBench/README.md)
 - [MedAgentBench-v2/README.md](MedAgentBench-v2/README.md)
+
+---
+
+## Collaboration
+
+We can share results by committing `outputs/` back via pull request.
+
+### One-time setup
+
+1. Fork this repository.
+2. Clone your fork:
+   ```bash
+   git clone https://github.com/<your-username>/skill-agent-dev-min.git
+   cd skill-agent-dev-min
+   ```
+3. Follow the setup instructions in the benchmark READMEs (conda environment, Docker).
+4. Set your Azure credentials:
+   ```bash
+   export AZURE_OPENAI_API_KEY="..."
+   export AZURE_API_BASE="https://YOUR-RESOURCE-NAME.openai.azure.com"   # for GPT-4.1
+   export AZURE_API_VERSION="2024-12-01-preview"
+   ```
+   Edit the `base_url` field in each `_gpt54mini` / `_gpt54nano` config to your resource name.
+
+### Running experiments
+
+In each benchmark directory, start the task worker in one terminal and the learning cycle in another — see the respective README for exact commands. Test set evaluation runs automatically when each cycle finishes; results land in `<run-dir>/test_eval_best/` and `<run-dir>/test_eval_final/`.
+
+### Sharing results
+
+Commit your `outputs/` directories and open a pull request against `main`:
+
+```bash
+git checkout -b results/<your-name>
+git add MedAgentBench/outputs/ MedAgentBench-v2/outputs/
+git commit -m "Add experiment results: <model(s)>, <benchmark(s)>"
+git push -u origin results/<your-name>
+# Then open a PR on GitHub
+```
+
+What to include:
+
+| Path | Required | Notes |
+|---|---|---|
+| `outputs/<method>/<run>/val_scores.json` | yes | val learning curve |
+| `outputs/<method>/<run>/test_eval_best/` | yes | held-out test score, best checkpoint |
+| `outputs/<method>/<run>/test_eval_final/` | yes | held-out test score, final epoch |
+| `outputs/<method>/<run>/skills/` | yes | learned skills — needed for transferability experiments |
+| `outputs/<method>/<run>/run.log` | optional | full training log |
+| `outputs/<method>/<run>/epoch_*/` | optional | per-epoch dev/val traces |
