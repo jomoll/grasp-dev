@@ -1482,6 +1482,22 @@ class SkillCycleRunner:
         else:
             print("[TestEval] No best checkpoint; skipping best-checkpoint eval.")
 
+    def run_baseline_test_eval(self) -> None:
+        test_path = self.config.get("data", {}).get("test")
+        if not test_path:
+            print("[BaselineTestEval] Skipped: no 'test' split configured.")
+            return
+
+        baseline_dir = self.run_dir / "test_eval_baseline"
+        if (baseline_dir / "test_score.json").exists():
+            print("[BaselineTestEval] Already complete; skipping.")
+            return
+
+        test_data = _load_required_json_list(Path(test_path), "test split")
+        print(f"\n[BaselineTestEval] Running baseline test set evaluation ({len(test_data)} samples)...")
+        baseline_score = self._eval_split_with_agent(self.skill_aware_agent.agent, test_data, baseline_dir)
+        print(f"[BaselineTestEval] Baseline (no skills): {baseline_score:.1%}")
+
     # ------------------------------------------------------------------
     # Reporting
     # ------------------------------------------------------------------
