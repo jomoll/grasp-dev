@@ -1,0 +1,134 @@
+# MedAgentBench-v2
+
+FHIR medical records benchmark (v2, 10 redesigned clinical task types). Tasks are qualitatively harder than v1: multi-step decision trees, time-window reasoning, coordinated writes across multiple FHIR resource types, and safety protocols. Uses the same FHIR Docker image as MedAgentBench — no additional data loading needed.
+
+## Setup
+
+Reuse the MedAgentBench conda environment:
+
+```bash
+conda activate medagentbench
+pip install -r requirements.txt   # installs any v2-specific additions
+```
+
+Pull and start the FHIR server (shared image, same port as MedAgentBench):
+
+```bash
+docker pull jyxsu6/medagentbench:latest
+docker tag jyxsu6/medagentbench:latest medagentbench
+docker run -p 8080:8080 medagentbench
+```
+
+The reference solution (`new_refsol.py`) is bundled in `src/server/tasks/medagentbench/` — no separate download required.
+
+Generate data splits (one-time, splits are already included but can be regenerated):
+
+```bash
+python data/medagentbench/split_dataset.py
+```
+
+## Environment variables
+
+```bash
+# GPT-4.1
+export AZURE_OPENAI_API_KEY="..."
+export AZURE_API_BASE="https://YOUR-RESOURCE-NAME.openai.azure.com"
+export AZURE_API_VERSION="2024-12-01-preview"
+
+# GPT-5.4-mini / GPT-5.4-nano — same key; also edit base_url in each config:
+#   base_url: "https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/"
+```
+
+## Running experiments
+
+MedAgentBench-v2 uses controller port 5070 and worker base port 5071 (different from v1's 5050/5051), so both can run in parallel if needed.
+
+**Terminal 1 — task worker:**
+
+```bash
+conda activate medagentbench
+python -m src.start_task -a --config configs/start_task.yaml --base-port 5071
+```
+
+**Terminal 2 — learning cycle:**
+
+```bash
+conda activate medagentbench
+
+# skill_cycle
+python -m src.skill_cycle --config configs/skill_cycle_gpt41.yaml      --run-name run_001
+python -m src.skill_cycle --config configs/skill_cycle_gpt54mini.yaml   --run-name run_001
+python -m src.skill_cycle --config configs/skill_cycle_gpt54nano.yaml   --run-name run_001
+
+# memory_cycle
+python -m src.memory_cycle --config configs/memory_cycle_gpt41.yaml     --run-name run_001
+python -m src.memory_cycle --config configs/memory_cycle_gpt54mini.yaml --run-name run_001
+python -m src.memory_cycle --config configs/memory_cycle_gpt54nano.yaml --run-name run_001
+
+# batch_memory_cycle
+python -m src.batch_memory_cycle --config configs/batch_memory_cycle_gpt41.yaml      --run-name run_001
+python -m src.batch_memory_cycle --config configs/batch_memory_cycle_gpt54mini.yaml  --run-name run_001
+python -m src.batch_memory_cycle --config configs/batch_memory_cycle_gpt54nano.yaml  --run-name run_001
+
+# evo_memory_cycle
+python -m src.evo_memory_cycle --config configs/evo_memory_cycle_gpt41.yaml      --run-name run_001
+python -m src.evo_memory_cycle --config configs/evo_memory_cycle_gpt54mini.yaml  --run-name run_001
+python -m src.evo_memory_cycle --config configs/evo_memory_cycle_gpt54nano.yaml  --run-name run_001
+
+# expel_cycle
+python -m src.expel_cycle --config configs/expel_cycle_gpt41.yaml      --run-name run_001
+python -m src.expel_cycle --config configs/expel_cycle_gpt54mini.yaml  --run-name run_001
+python -m src.expel_cycle --config configs/expel_cycle_gpt54nano.yaml  --run-name run_001
+
+# skillx_cycle
+python -m src.skillx_cycle --config configs/skillx_cycle_gpt41.yaml      --run-name run_001
+python -m src.skillx_cycle --config configs/skillx_cycle_gpt54mini.yaml  --run-name run_001
+python -m src.skillx_cycle --config configs/skillx_cycle_gpt54nano.yaml  --run-name run_001
+```
+
+## Evaluating on the test set
+
+```bash
+# Base agent (no learned skills)
+python -m src.run_eval --config configs/skill_cycle_gpt41.yaml --split test --run-name base_test
+
+# Best skills from a completed run
+python -m src.run_eval --config configs/skill_cycle_gpt41.yaml --split test \
+    --skills-dir outputs/skill_cycle_gpt41/run_001/skills/best --run-name run_001_best_test
+```
+
+## Data splits
+
+| Split | Samples | Description |
+|---|---|---|
+| dev | 126 | Skill learning (60% of tasks 1–4, 6, 8, 9 — 18 per type) |
+| val | 84 | Monitoring during training (40% of tasks 1–4, 6, 8, 9 — 12 per type) |
+| test | 90 | Held-out evaluation (tasks 5, 7, 10 — OOD) |
+
+## Task types
+
+| Task | Clinical workflow | FHIR resources |
+|---|---|---|
+| 1 | CT Abd/Pelvis surveillance — order if >12 months old | Procedure (read), ServiceRequest (write) |
+| 2 | DVT prophylaxis reconciliation — ensure exactly one heparin order | MedicationRequest (read + write) |
+| 3 | Average heart rate over 6h and 12h windows | Observation (read only) |
+| 4 | Urinary catheter dwell check — remove order if >48 hours | Procedure + ServiceRequest (read + write) |
+| 5 | Renal mass protocol — CT + IR referral if diagnosis present and CT stale | Condition + Procedure + ServiceRequest (read + write) |
+| 6 | Thyroid protocol — levothyroxine or repeat labs based on TSH/FT4 branching | Observation (read), MedicationRequest + ServiceRequest (write) |
+| 7 | QTc safety — ECG order + discontinue QT-prolonging drug if QTc >500 ms | Observation + MedicationRequest (read + write) |
+| 8 | Naloxone coverage — add naloxone if active opioid without naloxone | MedicationRequest (read + write) |
+| 9 | Influenza vaccine recall — order if last shot >365 days ago | Procedure (read), ServiceRequest (write) |
+| 10 | COVID-19 booster — order if last vaccine >12 months ago | Procedure + MedicationRequest (read + write) |
+
+## Output structure
+
+```
+outputs/
+└── skill_cycle_gpt41/
+    └── run_001/
+        ├── run.log
+        ├── val_scores.json
+        └── skills/
+            ├── learned/    # current skill library
+            └── best/       # best checkpoint by val score
+```

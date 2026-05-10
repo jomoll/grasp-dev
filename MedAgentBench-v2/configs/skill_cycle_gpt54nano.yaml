@@ -1,0 +1,36 @@
+output_dir: "outputs/skill_cycle_gpt54nano"
+
+agent:
+  module: src.client.agents.OpenAIResponsesAgent
+  parameters:
+    model: "gpt-5.4-nano"
+    base_url: "https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/"
+    reasoning_effort: "low"
+    text_verbosity: "low"
+    max_output_tokens: 32768
+    timeout: 300
+
+task:
+  name: "medagentbench-v2-skill"
+  controller_address: "http://localhost:5070/api"
+  fhir_api_base: "http://localhost:8080/fhir/"
+
+data:
+  full: "data/medagentbench/new_patient_tasks.json"
+  dev:  "data/medagentbench/split_dev.json"
+  val:  "data/medagentbench/split_val.json"
+  test: "data/medagentbench/split_test.json"
+
+skills:
+  base_dir: "skills/base"
+
+cycle:
+  epochs: 5
+  update_every: 42
+  batch_concurrency: 5
+  max_proposals: 1
+  max_learned_skills: 10
+  grpo_k: 4
+  grpo_eval_n: 30
+  run_baseline: true
+  seed: 1

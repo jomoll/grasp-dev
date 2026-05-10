@@ -1,0 +1,40 @@
+output_dir: "outputs/memory_cycle_gpt54nano"
+
+agent:
+  module: src.client.agents.OpenAIResponsesAgent
+  parameters:
+    model: "gpt-5.4-nano"
+    base_url: "https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/"
+    reasoning_effort: "low"
+    text_verbosity: "low"
+    max_output_tokens: 32768
+    timeout: 300
+
+updater:
+  module: src.client.agents.OpenAIResponsesAgent
+  parameters:
+    model: "gpt-5.4-nano"
+    base_url: "https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/"
+    reasoning_effort: "low"
+    text_verbosity: "low"
+    max_output_tokens: 32768
+    timeout: 300
+
+task:
+  name: "medagentbench-skill"
+  controller_address: "http://localhost:5050/api"
+  fhir_api_base: "http://localhost:8080/fhir/"
+
+data:
+  full: "data/medagentbench/test_data_v2.json"
+  dev:  "data/medagentbench/split_dev.json"
+  val:  "data/medagentbench/split_val.json"
+
+memory:
+  max_bullets: 200
+
+cycle:
+  epochs: 5
+  update_every: 42
+  batch_concurrency: 5
+  run_baseline: true
