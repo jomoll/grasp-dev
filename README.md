@@ -21,13 +21,15 @@ Six learning methods are provided per benchmark:
 | `expel_cycle` | `expel_cycle_*` | ExpeL-style rule extraction from successful trajectories |
 | `skillx_cycle` | `skillx_cycle_*` | SkillX functional skill extraction with plan rewriting |
 
-Each method has three config variants:
+For MedAgentBench and MedAgentBench-v2, each method has three config variants:
 
 | Suffix | Model | API |
 |---|---|---|
 | `_gpt41` | `gpt-4.1` | Azure Chat Completions via LiteLLM |
 | `_gpt54mini` | `gpt-5.4-mini` | Azure Responses API (reasoning, low effort + low verbosity) |
 | `_gpt54nano` | `gpt-5.4-nano` | Azure Responses API (reasoning, low effort + low verbosity) |
+
+FHIR-AgentBench follows the same three-variant pattern using the same Azure credentials.
 
 ---
 
@@ -90,7 +92,7 @@ We can share results by committing `outputs/` back via pull request.
 
 In each benchmark directory, start the task worker in one terminal and the learning cycle in another — see the respective README for exact commands. Test set evaluation runs automatically when each cycle finishes; results land in `<run-dir>/test_eval_best/`, `<run-dir>/test_eval_final/`, and `<run-dir>/test_eval_baseline/` (no-skill baseline).
 
-For FHIR-AgentBench, run `python skill_cycle.py --config configs/skill_cycle_code.yaml` (no separate task worker needed). If you don't have a GCP account, skip this benchmark entirely — it is optional.
+For FHIR-AgentBench, run `python skill_cycle.py --config configs/skill_cycle_gpt41.yaml` (no separate task worker needed). If you don't have a GCP account, skip this benchmark entirely — it is optional.
 
 ### Sharing results
 

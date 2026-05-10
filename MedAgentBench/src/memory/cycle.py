@@ -429,6 +429,16 @@ class BatchMemoryCycleRunner:
         else:
             print("[TestEval] No best checkpoint; skipping best-checkpoint eval.")
 
+        baseline_dir = self.run_dir / "test_eval_baseline"
+        if not (baseline_dir / "test_score.json").exists():
+            from src.typings.general import InstanceFactory
+            base_agent = InstanceFactory(**self.config["agent"]).create()
+            print(f"[TestEval] Baseline (no memory) → {baseline_dir}")
+            baseline_score = self._eval_split_with_agent(base_agent, test_data, baseline_dir)
+            print(f"[TestEval] Baseline: {baseline_score:.1%}")
+        else:
+            print("[TestEval] Baseline already computed; skipping.")
+
     # ------------------------------------------------------------------
     # Reporting
     # ------------------------------------------------------------------

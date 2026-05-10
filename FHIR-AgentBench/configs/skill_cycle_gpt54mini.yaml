@@ -1,0 +1,49 @@
+output_dir: outputs/skill_cycle_gpt54mini
+agent:
+  strategy: multi_turn_code_resource
+  model: gpt-5.4-mini
+  timeout: 300
+  max_retries: 1
+  verbose: false
+  enable_cache: true
+  base_url: https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/
+  sample_timeout: 600
+updater:
+  model: gpt-5.4-mini
+  temperature: 0.7
+  max_tokens: 128000
+  timeout: 600
+  max_retries: 2
+  base_url: https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/
+eval:
+  model: gpt-5.4-mini
+  timeout: 300
+  max_retries: 1
+  base_url: https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/
+data:
+  csv: final_dataset/questions_answers_sql_fhir.csv
+  dev_splits:
+  - train
+  val_splits:
+  - valid
+  test_splits:
+  - test
+  dev_limit: 120
+  val_limit: 80
+skills:
+  base_dir: skills/base
+cycle:
+  epochs: 5
+  update_every: 60
+  batch_concurrency: 4
+  max_proposals: 1
+  max_learned_skills: 10
+  grpo_k: 2
+  grpo_eval_n: 30
+  run_baseline: true
+  seed: 1
+  non_learnable_labels:
+  - timeout
+  - runner_error
+  - service_unavailable
+  - sample_timeout

@@ -173,25 +173,16 @@ If `final_dataset/questions_answers_sql_fhir.csv` already exists, you can skip t
    python create_question_fhir_dataset.py
    ```
 
-## Model configuration
-
-Edit the `model` and `base_url` fields in each config under `configs/` to point to your LiteLLM-compatible endpoint (local vLLM, LiteLLM proxy, or any OpenAI-compatible server):
-
-```yaml
-agent:
-  model: "openai/<your-model-name>"
-  base_url: "http://<your-endpoint>/v1"
-```
-
-The `updater` and `eval` sections in each config accept the same fields and can point to the same or a different endpoint.
-
-To start a local vLLM server:
+## Environment variables
 
 ```bash
-CUDA_VISIBLE_DEVICES=<gpu_ids> python -m vllm.entrypoints.openai.api_server \
-  --model <model> --load-format safetensors --max-model-len 32768 \
-  --tensor-parallel-size <num_gpus> --port <port> \
-  --enable-auto-tool-choice --tool-call-parser llama3_json
+# GPT-4.1
+export AZURE_OPENAI_API_KEY="..."
+export AZURE_API_BASE="https://YOUR-RESOURCE-NAME.openai.azure.com"
+export AZURE_API_VERSION="2024-12-01-preview"
+
+# GPT-5.4-mini / GPT-5.4-nano — same key; also edit base_url in each config:
+#   base_url: "https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/"
 ```
 
 ## Running experiments
@@ -204,28 +195,40 @@ Replace `<run-name>` with a unique identifier for each run.
 conda activate fhir-agentbench
 
 # skill_cycle
-python skill_cycle.py --config configs/skill_cycle_code.yaml --run-name run_001
+python skill_cycle.py --config configs/skill_cycle_gpt41.yaml     --run-name run_001
+python skill_cycle.py --config configs/skill_cycle_gpt54mini.yaml --run-name run_001
+python skill_cycle.py --config configs/skill_cycle_gpt54nano.yaml --run-name run_001
 
 # memory_cycle
-python memory_cycle.py --config configs/memory_cycle.yaml --run-name run_001
+python memory_cycle.py --config configs/memory_cycle_gpt41.yaml     --run-name run_001
+python memory_cycle.py --config configs/memory_cycle_gpt54mini.yaml --run-name run_001
+python memory_cycle.py --config configs/memory_cycle_gpt54nano.yaml --run-name run_001
 
 # batch_memory_cycle
-python batch_memory_cycle.py --config configs/batch_memory_cycle.yaml --run-name run_001
+python batch_memory_cycle.py --config configs/batch_memory_cycle_gpt41.yaml     --run-name run_001
+python batch_memory_cycle.py --config configs/batch_memory_cycle_gpt54mini.yaml --run-name run_001
+python batch_memory_cycle.py --config configs/batch_memory_cycle_gpt54nano.yaml --run-name run_001
 
 # evo_memory_cycle
-python evo_memory_cycle.py --config configs/evo_memory_cycle.yaml --run-name run_001
+python evo_memory_cycle.py --config configs/evo_memory_cycle_gpt41.yaml     --run-name run_001
+python evo_memory_cycle.py --config configs/evo_memory_cycle_gpt54mini.yaml --run-name run_001
+python evo_memory_cycle.py --config configs/evo_memory_cycle_gpt54nano.yaml --run-name run_001
 
 # expel_cycle
-python expel_cycle.py --config configs/expel_cycle.yaml --run-name run_001
+python expel_cycle.py --config configs/expel_cycle_gpt41.yaml     --run-name run_001
+python expel_cycle.py --config configs/expel_cycle_gpt54mini.yaml --run-name run_001
+python expel_cycle.py --config configs/expel_cycle_gpt54nano.yaml --run-name run_001
 
 # skillx_cycle
-python skillx_cycle.py --config configs/skillx_cycle.yaml --run-name run_001
+python skillx_cycle.py --config configs/skillx_cycle_gpt41.yaml     --run-name run_001
+python skillx_cycle.py --config configs/skillx_cycle_gpt54mini.yaml --run-name run_001
+python skillx_cycle.py --config configs/skillx_cycle_gpt54nano.yaml --run-name run_001
 ```
 
 **Resuming an interrupted run:**
 
 ```bash
-python skill_cycle.py --config configs/skill_cycle_code.yaml --run-name run_001 --resume
+python skill_cycle.py --config configs/skill_cycle_gpt41.yaml --run-name run_001 --resume
 ```
 
 The `--resume` flag works identically for all six cycle types.
@@ -251,7 +254,7 @@ outputs/<method>/<run-name>/
 
 ```
 outputs/
-└── skill_cycle_code/
+└── skill_cycle_gpt41/
     └── run_001/
         ├── run.log
         ├── val_scores.json
