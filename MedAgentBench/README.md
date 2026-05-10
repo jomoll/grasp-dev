@@ -11,6 +11,7 @@ pip install -r requirements.txt
 ```
 
 Pull and start the FHIR server:
+**Terminal 1 — fhir server (keep running for all experiments, only need one for both datasets):**
 
 ```bash
 docker pull jyxsu6/medagentbench:latest
@@ -19,8 +20,6 @@ docker run -p 8080:8080 medagentbench
 ```
 
 Wait until the console shows "Started Application in XXX seconds", then verify at `http://localhost:8080/`.
-
-Download `refsol.py` into `src/server/tasks/medagentbench/refsol.py` from the [Stanford Box link](https://stanfordmedicine.box.com/s/fizv0unyjgkb1r3a83rfn5p3dc673uho).
 
 Generate data splits (one-time, splits are already included but can be regenerated):
 
@@ -44,14 +43,14 @@ export AZURE_API_VERSION="2024-12-01-preview"
 
 Start the task worker in one terminal, then run the learning cycle in another.
 
-**Terminal 1 — task worker (keep running for all experiments):**
+**Terminal 2 — task worker (keep running for all experiments):**
 
 ```bash
 conda activate medagentbench
 python -m src.start_task -a --config configs/start_task.yaml
 ```
 
-**Terminal 2 — learning cycle:**
+**Terminal 3 — learning cycle:**
 
 Replace `<config>` with any config file from `configs/` and `<run-name>` with a unique name.
 
