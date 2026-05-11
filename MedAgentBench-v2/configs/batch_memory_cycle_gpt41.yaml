@@ -28,12 +28,13 @@ data:
   dev:  "data/medagentbench/split_dev.json"
   val:  "data/medagentbench/split_val.json"
   test: "data/medagentbench/split_test.json"
+  id_test: "data/medagentbench/split_id_test.json"
 
 memory:
   max_bullets: 200
 
 cycle:
   epochs: 5
-  update_every: 42
+  update_every: 48
   batch_concurrency: 5
   run_baseline: true

@@ -19,17 +19,18 @@ data:
   dev:  "data/medagentbench/split_dev.json"
   val:  "data/medagentbench/split_val.json"
   test: "data/medagentbench/split_test.json"
+  id_test: "data/medagentbench/split_id_test.json"
 
 skills:
   base_dir: "skills/base"
 
 cycle:
   epochs: 5
-  update_every: 42
+  update_every: 48
   batch_concurrency: 5
   max_proposals: 1
   max_learned_skills: 10
   grpo_k: 4
-  grpo_eval_n: 30
+  grpo_eval_n: 36
   run_baseline: true
   seed: 1
