@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import re
 import sys
 import threading
@@ -112,6 +113,7 @@ Return 1 or 0."""
                             temperature=None if is_reasoning_llm(self.model) else 0.0,
                             base_url=self.base_url,
                             custom_llm_provider="openai" if self.base_url else None,
+                            api_key=os.getenv("OPENAI_API_KEY") if self.base_url else None,
                             timeout=self.timeout,
                         )
                         break

@@ -646,7 +646,7 @@ def safe_llm_call(
                 parallel_tool_calls=parallel_tool_calls if tools else None,
                 base_url=base_url,
                 custom_llm_provider="openai" if base_url else None,
-                api_key="not-needed" if base_url else None,
+                api_key=os.getenv("OPENAI_API_KEY") if base_url else None,
                 timeout=timeout,
             )
 
