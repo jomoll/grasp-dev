@@ -2,10 +2,10 @@
 
 Self-improving LLM agent experiments on FHIR medical benchmarks. Two benchmarks are required; a third is optional.
 
-| Benchmark | Task | Dev | Val | Test | Setup |
-|---|---|---|---|---|---|
-| `MedAgentBench/` | FHIR reads/writes against a live FHIR server (10 clinical task types, v1 data) | 126 | 84 | 90 | Docker |
-| `MedAgentBench-v2/` | Harder FHIR tasks — multi-step decision trees, time-window reasoning, coordinated writes (10 redesigned task types) | 126 | 84 | 90 | Docker |
+| Benchmark | Task | Dev | Val | ID test | OOD test | Setup |
+|---|---|---|---|---|---|---|
+| `MedAgentBench/` | FHIR reads/writes against a live FHIR server (10 clinical task types, v1 data) | 96 | 80 | 64 | 60 | Docker |
+| `MedAgentBench-v2/` | Harder FHIR tasks — multi-step decision trees, time-window reasoning, coordinated writes (10 redesigned task types) | 96 | 80 | 64 | 60 | Docker |
 | `FHIR-AgentBench/` *(optional)* | QA over real MIMIC-IV patient data via Google Cloud Healthcare FHIR API | — | — | — | GCP account required |
 
 FHIR-AgentBench is optional — if you have a GCP account it is straightforward to set up (see [FHIR-AgentBench/README.md](FHIR-AgentBench/README.md)); if not, running MedAgentBench and MedAgentBench-v2 is all that is needed.
@@ -90,7 +90,7 @@ We can share results by committing `outputs/` back via pull request.
 
 ### Running experiments
 
-In each benchmark directory, start the task worker in one terminal and the learning cycle in another — see the respective README for exact commands. Test set evaluation runs automatically when each cycle finishes; results land in `<run-dir>/test_eval_best/`, `<run-dir>/test_eval_final/`, and `<run-dir>/test_eval_baseline/` (no-skill baseline).
+In each benchmark directory, start the task worker in one terminal and the learning cycle in another — see the respective README for exact commands. Test set evaluation runs automatically when each cycle finishes; results land in `<run-dir>/test_eval_best/`, `<run-dir>/test_eval_baseline/`, `<run-dir>/id_test_eval_best/`, and `<run-dir>/id_test_eval_baseline/` (OOD and in-distribution test sets, with and without learned skills).
 
 For FHIR-AgentBench, run `python skill_cycle.py --config configs/skill_cycle_gpt41.yaml` (no separate task worker needed). If you don't have a GCP account, skip this benchmark entirely — it is optional.
 
@@ -113,9 +113,11 @@ What to include:
 | Path | Required | Notes |
 |---|---|---|
 | `outputs/<method>/<run>/val_scores.json` | yes | val learning curve |
-| `outputs/<method>/<run>/test_eval_best/` | yes | held-out test score, best checkpoint |
-| `outputs/<method>/<run>/test_eval_final/` | yes | held-out test score, final epoch |
-| `outputs/<method>/<run>/test_eval_baseline/` | yes | held-out test score, no-skill baseline |
+| `outputs/<method>/<run>/test_eval_best/` | yes | OOD test score, best-val checkpoint |
+| `outputs/<method>/<run>/test_eval_baseline/` | yes | OOD test score, no-skill baseline |
+| `outputs/<method>/<run>/id_test_eval_best/` | yes | in-dist test score, best-val checkpoint |
+| `outputs/<method>/<run>/id_test_eval_baseline/` | yes | in-dist test score, no-skill baseline |
+| `outputs/<method>/<run>/test_scores.json` | yes | summary of all four test evaluations |
 | `outputs/<method>/<run>/skills/` | yes | learned skills — needed for transferability experiments |
 | `outputs/<method>/<run>/run.log` | optional | full training log |
 | `outputs/<method>/<run>/epoch_*/` | optional | per-epoch dev/val traces |
