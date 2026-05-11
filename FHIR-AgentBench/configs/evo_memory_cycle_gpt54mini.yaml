@@ -29,6 +29,7 @@ data:
   - test
   dev_limit: 120
   val_limit: 80
+  test_limit: 80
 evo_memory:
   episodic_enabled: true
   semantic_enabled: true

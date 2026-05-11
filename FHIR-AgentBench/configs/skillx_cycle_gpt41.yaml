@@ -26,6 +26,7 @@ data:
   - test
   dev_limit: 120
   val_limit: 80
+  test_limit: 80
 skillx:
   skill_type: functional
   retrieval_top_k: 5

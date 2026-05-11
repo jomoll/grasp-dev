@@ -29,6 +29,7 @@ data:
   - test
   dev_limit: 120
   val_limit: 80
+  test_limit: 80
 expel:
   max_num_rules: 20
   use_exemplars: false

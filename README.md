@@ -6,7 +6,7 @@ Self-improving LLM agent experiments on FHIR medical benchmarks. Two benchmarks 
 |---|---|---|---|---|---|---|
 | `MedAgentBench/` | FHIR reads/writes against a live FHIR server (10 clinical task types, v1 data) | 96 | 80 | 64 | 60 | Docker |
 | `MedAgentBench-v2/` | Harder FHIR tasks — multi-step decision trees, time-window reasoning, coordinated writes (10 redesigned task types) | 96 | 80 | 64 | 60 | Docker |
-| `FHIR-AgentBench/` *(optional)* | QA over real MIMIC-IV patient data via Google Cloud Healthcare FHIR API | — | — | — | GCP account required |
+| `FHIR-AgentBench/` *(optional)* | QA over real MIMIC-IV patient data via Google Cloud Healthcare FHIR API | 120 | 80 | 80 | — | GCP account required |
 
 FHIR-AgentBench is optional — if you have a GCP account it is straightforward to set up (see [FHIR-AgentBench/README.md](FHIR-AgentBench/README.md)); if not, running MedAgentBench and MedAgentBench-v2 is all that is needed.
 
