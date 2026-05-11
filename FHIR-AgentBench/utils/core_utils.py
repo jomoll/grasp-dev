@@ -639,13 +639,14 @@ def safe_llm_call(
         try:
             litellm = get_litellm()
             output = litellm.completion(
-                model=model, 
-                messages=messages, 
-                tools=tools, 
+                model=model,
+                messages=messages,
+                tools=tools,
                 temperature=None if is_reasoning_llm(model) else temperature,
                 parallel_tool_calls=parallel_tool_calls if tools else None,
                 base_url=base_url,
                 custom_llm_provider="openai" if base_url else None,
+                api_key="not-needed" if base_url else None,
                 timeout=timeout,
             )
 
