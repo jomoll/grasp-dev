@@ -25,7 +25,7 @@ run_med_bench() {
         local module="${base%_*}"
         echo ""
         echo "--- $config ---"
-        python -m "src.$module" --config "$config"
+        python -m "src.$module" --config "$config" --resume
     done
 }
 
@@ -42,7 +42,7 @@ run_fhir_bench() {
         local module="${base%_*}"
         echo ""
         echo "--- $config ---"
-        python "${module}.py" --config "$config"
+        python "${module}.py" --config "$config" --resume
     done
 }
 

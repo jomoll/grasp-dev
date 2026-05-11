@@ -90,9 +90,14 @@ We can share results by committing `outputs/` back via pull request.
 
 ### Running experiments
 
-In each benchmark directory, start the task worker in one terminal and the learning cycle in another — see the respective README for exact commands. Test set evaluation runs automatically when each cycle finishes; results land in `<run-dir>/test_eval_best/`, `<run-dir>/test_eval_baseline/`, `<run-dir>/id_test_eval_best/`, and `<run-dir>/id_test_eval_baseline/` (OOD and in-distribution test sets, with and without learned skills).
+Each collaborator is assigned one model (`gpt41`, `gpt54mini`, or `gpt54nano`). Run all six cycle types for your model across all three benchmarks with the helper script at the repo root:
 
-For FHIR-AgentBench, run `python skill_cycle.py --config configs/skill_cycle_gpt41.yaml` (no separate task worker needed). If you don't have a GCP account, skip this benchmark entirely — it is optional.
+```bash
+conda activate medagentbench   # or fhir-agentbench when running FHIR-AgentBench
+./run_all.sh gpt41             # replace gpt41 with your assigned model
+```
+
+The script runs MedAgentBench → MedAgentBench-v2 → FHIR-AgentBench sequentially, passing `--resume` automatically so interrupted runs continue from where they left off. See the individual benchmark READMEs for setup and per-cycle commands if you prefer to run cycles manually. If you don't have a GCP account, skip FHIR-AgentBench — it is optional.
 
 ### Sharing results
 
