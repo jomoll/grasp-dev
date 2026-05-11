@@ -235,17 +235,14 @@ The `--resume` flag works identically for all six cycle types.
 
 ## Test set evaluation
 
-Test set evaluation runs **automatically** at the end of every cycle. Results are written into the run directory:
+Test set evaluation runs **automatically** at the end of every cycle using the best-val checkpoint (in-distribution test only). Results are written into the run directory:
 
 ```
 outputs/<method>/<run-name>/
-├── test_eval_best/
+├── id_test_eval_best/     # in-dist test, best-val checkpoint
 │   ├── test_runs.jsonl
-│   └── test_score.json   # {split, score, n_correct, n_total}
-├── test_eval_final/
-│   ├── test_runs.jsonl
-│   └── test_score.json
-└── test_eval_baseline/   # skill_cycle only — no-skill baseline
+│   └── test_score.json    # {split, score, n_correct, n_total}
+└── id_test_eval_baseline/ # in-dist test, no-skill baseline (skill_cycle only)
     ├── test_runs.jsonl
     └── test_score.json
 ```
@@ -258,13 +255,10 @@ outputs/
     └── run_001/
         ├── run.log
         ├── val_scores.json
-        ├── test_eval_best/
+        ├── id_test_eval_best/
         │   ├── test_runs.jsonl
         │   └── test_score.json
-        ├── test_eval_final/
-        │   ├── test_runs.jsonl
-        │   └── test_score.json
-        ├── test_eval_baseline/
+        ├── id_test_eval_baseline/
         │   ├── test_runs.jsonl
         │   └── test_score.json
         └── skills/

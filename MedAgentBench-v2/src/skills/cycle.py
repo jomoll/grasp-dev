@@ -897,10 +897,7 @@ class SkillCycleRunner:
                 best_regressed_traces = regressed_traces
 
         if best_candidate is None:
-            print(
-                "  [ProposalRanking] no proposal met acceptance criteria "
-                "(adjusted > 0 and regressions <= baseline regressions) — applying nothing"
-            )
+            print("  [ProposalRanking] no proposal improved adjusted score — applying nothing")
             return [], grpo_log, all_raw_proposals, new_labels
 
         print(f"  [ProposalRanking] winner: {best_candidate['action']}::{best_candidate['name']} "
@@ -935,12 +932,8 @@ class SkillCycleRunner:
                     best_adjusted = rev_adjusted
                     best_stats = (rev_fixes, rev_regressions, rev_invalid)
                 else:
-                    print(
-                        "  [ContrastiveRevision] revision did not meet acceptance criteria "
-                        f"(adjusted={rev_adjusted:+d}, best={best_adjusted:+d}, "
-                        f"regressions={rev_regressions}, baseline_regressions={baseline_regressions}), "
-                        "keeping original"
-                    )
+                    print(f"  [ContrastiveRevision] revision did not improve "
+                          f"({rev_adjusted:+d} ≤ {best_adjusted:+d}), keeping original")
 
         winner = dict(best_candidate)
         winner["_provenance"] = {
@@ -1422,7 +1415,7 @@ class SkillCycleRunner:
     # Test-set evaluation
     # ------------------------------------------------------------------
 
-    def _eval_split_with_agent(self, agent, data: List[Dict], out_dir: Path) -> float:
+    def _eval_split_with_agent(self, agent, data: List[Dict], out_dir: Path, split_label: str = "test") -> float:
         from src.client.task import TaskError
         out_dir.mkdir(parents=True, exist_ok=True)
         total = len(data)
@@ -1455,26 +1448,20 @@ class SkillCycleRunner:
             for e in entries:
                 f.write(json.dumps(e, ensure_ascii=False) + "\n")
 
-        summary = {"split": "test", "score": score, "n_correct": n_correct, "n_total": total}
+        summary = {"split": split_label, "score": score, "n_correct": n_correct, "n_total": total}
         with open(out_dir / "test_score.json", "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
 
         return score
 
     def run_test_eval(self) -> None:
-        test_path = self.config.get("data", {}).get("test")
-        if not test_path:
-            print("[TestEval] Skipped: no 'test' split configured.")
+        data_cfg = self.config.get("data", {})
+        test_path = data_cfg.get("test")
+        id_test_path = data_cfg.get("id_test")
+
+        if not test_path and not id_test_path:
+            print("[TestEval] Skipped: no 'test' or 'id_test' split configured.")
             return
-
-        test_data = _load_required_json_list(Path(test_path), "test split")
-        print(f"\n[TestEval] Running test set evaluation ({len(test_data)} samples)...")
-
-        # skills/learned/ was restored from skills/best/ at end of _run_inner
-        final_dir = self.run_dir / "test_eval_final"
-        print(f"[TestEval] Final skills (skills/learned/) → {final_dir}")
-        final_score = self._eval_split_with_agent(self.skill_aware_agent, test_data, final_dir)
-        print(f"[TestEval] Final: {final_score:.1%}")
 
         if self._best_skills_dir.exists():
             best_repo = SkillRepository(
@@ -1482,22 +1469,45 @@ class SkillCycleRunner:
                 learned_dir=self._best_skills_dir,
             )
             best_agent = SkillAwareAgent(self.skill_aware_agent.agent, best_repo)
-            best_dir = self.run_dir / "test_eval_best"
-            print(f"[TestEval] Best checkpoint (skills/best/) → {best_dir}")
-            best_score = self._eval_split_with_agent(best_agent, test_data, best_dir)
-            print(f"[TestEval] Best: {best_score:.1%}")
         else:
-            print("[TestEval] No best checkpoint; skipping best-checkpoint eval.")
+            best_agent = None
+            print("[TestEval] No best checkpoint found.")
 
-        baseline_dir = self.run_dir / "test_eval_baseline"
-        if not (baseline_dir / "test_score.json").exists():
-            print(f"[TestEval] Baseline (no skills) → {baseline_dir}")
-            baseline_score = self._eval_split_with_agent(
-                self.skill_aware_agent.agent, test_data, baseline_dir
-            )
-            print(f"[TestEval] Baseline: {baseline_score:.1%}")
-        else:
-            print("[TestEval] Baseline already computed; skipping.")
+        for split_label, path in [("test", test_path), ("id_test", id_test_path)]:
+            if not path:
+                continue
+            split_data = _load_required_json_list(Path(path), f"{split_label} split")
+            print(f"\n[TestEval] Running {split_label} evaluation ({len(split_data)} samples)...")
+            prefix = "id_test_eval" if split_label == "id_test" else "test_eval"
+
+            if best_agent is not None:
+                best_dir = self.run_dir / f"{prefix}_best"
+                print(f"[TestEval] Best checkpoint (skills/best/) → {best_dir}")
+                best_score = self._eval_split_with_agent(best_agent, split_data, best_dir, split_label)
+                print(f"[TestEval] {split_label} best: {best_score:.1%}")
+            else:
+                print(f"[TestEval] Skipping best-checkpoint eval for {split_label}.")
+
+            baseline_dir = self.run_dir / f"{prefix}_baseline"
+            if not (baseline_dir / "test_score.json").exists():
+                print(f"[TestEval] Baseline (no skills) → {baseline_dir}")
+                baseline_score = self._eval_split_with_agent(
+                    self.skill_aware_agent.agent, split_data, baseline_dir, split_label
+                )
+                print(f"[TestEval] {split_label} baseline: {baseline_score:.1%}")
+            else:
+                print(f"[TestEval] {split_label} baseline already computed; skipping.")
+
+        self._write_test_scores_summary()
+
+    def _write_test_scores_summary(self) -> None:
+        summary = {}
+        for key in ("test_eval_best", "test_eval_baseline", "id_test_eval_best", "id_test_eval_baseline"):
+            f = self.run_dir / key / "test_score.json"
+            if f.exists():
+                summary[key] = json.loads(f.read_text())
+        with open(self.run_dir / "test_scores.json", "w", encoding="utf-8") as fh:
+            json.dump(summary, fh, indent=2)
 
     # ------------------------------------------------------------------
     # Reporting

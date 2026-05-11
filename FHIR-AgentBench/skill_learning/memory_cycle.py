@@ -549,18 +549,11 @@ class FHIRBatchMemoryCycleRunner:
             score = n_correct / len(entries) if entries else 0.0
             out_dir.mkdir(parents=True, exist_ok=True)
             with open(out_dir / "test_score.json", "w", encoding="utf-8") as f:
-                json.dump({"split": "test", "score": score, "n_correct": n_correct, "n_total": len(entries)}, f, indent=2)
+                json.dump({"split": "id_test", "score": score, "n_correct": n_correct, "n_total": len(entries)}, f, indent=2)
             return score
 
-        final_dir = self.run_dir / "test_eval_final"
-        print(f"[TestEval] Final memory → {final_dir}")
-        final_dir.mkdir(parents=True, exist_ok=True)
-        final_entries = self._run_samples(test_data, update_cycle=-1, append_path=final_dir / "test_runs.jsonl")
-        final_score = _write_score(final_dir, final_entries)
-        print(f"[TestEval] Final: {final_score:.1%}")
-
         if self._best_memory_path.exists():
-            best_dir = self.run_dir / "test_eval_best"
+            best_dir = self.run_dir / "id_test_eval_best"
             print(f"[TestEval] Best memory snapshot → {best_dir}")
             best_dir.mkdir(parents=True, exist_ok=True)
             orig_memory_path = self.memory_path
@@ -570,7 +563,7 @@ class FHIRBatchMemoryCycleRunner:
             finally:
                 self.memory_path = orig_memory_path
             best_score = _write_score(best_dir, best_entries)
-            print(f"[TestEval] Best: {best_score:.1%}")
+            print(f"[TestEval] ID test best: {best_score:.1%}")
         else:
             print("[TestEval] No best checkpoint; skipping best-checkpoint eval.")
 

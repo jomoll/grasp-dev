@@ -100,16 +100,23 @@ The `--resume` flag works identically for all six cycle types.
 
 ## Test set evaluation
 
-Test set evaluation runs **automatically** at the end of every cycle. Results are written directly into the run directory:
+Test set evaluation runs **automatically** at the end of every cycle using the best-val checkpoint. Both test splits are evaluated. Results are written directly into the run directory:
 
 ```
 outputs/<method>/<run-name>/
-├── test_eval_best/
-│   ├── test_runs.jsonl   # per-sample correctness, best-val checkpoint
-│   └── test_score.json   # {split, score, n_correct, n_total}
-└── test_eval_final/
-    ├── test_runs.jsonl   # per-sample correctness, final epoch
-    └── test_score.json
+├── test_eval_best/          # OOD test (tasks 6, 7), best-val checkpoint
+│   ├── test_runs.jsonl      # per-sample correctness
+│   └── test_score.json      # {split, score, n_correct, n_total}
+├── test_eval_baseline/      # OOD test, no-skill/no-memory baseline
+│   ├── test_runs.jsonl
+│   └── test_score.json
+├── id_test_eval_best/       # in-dist test, best-val checkpoint
+│   ├── test_runs.jsonl
+│   └── test_score.json
+├── id_test_eval_baseline/   # in-dist test, no-skill/no-memory baseline
+│   ├── test_runs.jsonl
+│   └── test_score.json
+└── test_scores.json         # summary of all four evaluations
 ```
 
 To run a standalone evaluation manually (e.g. for the base agent or a custom skill directory):
@@ -129,9 +136,10 @@ The task worker must be running for both automatic and manual evaluation.
 
 | Split | Samples | Description |
 |---|---|---|
-| dev | 126 | Skill learning (60% of tasks 1–5, 8, 9) |
-| val | 84 | Monitoring during training (40% of tasks 1–5, 8, 9) |
-| test | 90 | Held-out evaluation (tasks 6, 7, 10 — OOD) |
+| dev | 96 | Skill learning (12 per in-dist task type — tasks 1–5, 8, 9, 10) |
+| val | 80 | Monitoring during training (10 per in-dist task type) |
+| id_test | 64 | In-distribution held-out evaluation (8 per in-dist task type) |
+| test | 60 | OOD held-out evaluation (tasks 6, 7 — 30 per type) |
 
 ## Output structure
 
@@ -141,12 +149,19 @@ outputs/
     └── run_001/
         ├── run.log
         ├── val_scores.json
-        ├── test_eval_best/     # test results using best-val checkpoint
+        ├── test_eval_best/       # OOD test, best-val checkpoint
         │   ├── test_runs.jsonl
         │   └── test_score.json
-        ├── test_eval_final/    # test results using final-epoch artifact
+        ├── test_eval_baseline/   # OOD test, no-skill baseline
         │   ├── test_runs.jsonl
         │   └── test_score.json
+        ├── id_test_eval_best/    # in-dist test, best-val checkpoint
+        │   ├── test_runs.jsonl
+        │   └── test_score.json
+        ├── id_test_eval_baseline/ # in-dist test, no-skill baseline
+        │   ├── test_runs.jsonl
+        │   └── test_score.json
+        ├── test_scores.json      # summary of all four evaluations
         └── skills/
             ├── learned/        # current skill library
             └── best/           # best checkpoint by val score

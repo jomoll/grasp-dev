@@ -360,7 +360,7 @@ class BatchMemoryCycleRunner:
     # Test-set evaluation
     # ------------------------------------------------------------------
 
-    def _eval_split_with_agent(self, agent, data: List[Dict], out_dir: Path) -> float:
+    def _eval_split_with_agent(self, agent, data: List[Dict], out_dir: Path, split_label: str = "test") -> float:
         from src.client.task import TaskError
         out_dir.mkdir(parents=True, exist_ok=True)
         total = len(data)
@@ -393,7 +393,7 @@ class BatchMemoryCycleRunner:
             for e in entries:
                 f.write(json.dumps(e, ensure_ascii=False) + "\n")
 
-        summary = {"split": "test", "score": score, "n_correct": n_correct, "n_total": total}
+        summary = {"split": split_label, "score": score, "n_correct": n_correct, "n_total": total}
         with open(out_dir / "test_score.json", "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
 
@@ -407,37 +407,53 @@ class BatchMemoryCycleRunner:
         return MemoryAwareAgent(base_agent, self._best_memory_path)
 
     def run_test_eval(self) -> None:
-        test_path = self.config.get("data", {}).get("test")
-        if not test_path:
-            print("[TestEval] Skipped: no 'test' split configured.")
+        data_cfg = self.config.get("data", {})
+        test_path = data_cfg.get("test")
+        id_test_path = data_cfg.get("id_test")
+
+        if not test_path and not id_test_path:
+            print("[TestEval] Skipped: no 'test' or 'id_test' split configured.")
             return
 
-        test_data = _load_required_json_list(Path(test_path), "test split")
-        print(f"\n[TestEval] Running test set evaluation ({len(test_data)} samples)...")
-
-        final_dir = self.run_dir / "test_eval_final"
-        print(f"[TestEval] Final artifact → {final_dir}")
-        final_score = self._eval_split_with_agent(self.memory_aware_agent, test_data, final_dir)
-        print(f"[TestEval] Final: {final_score:.1%}")
-
         best_agent = self._make_best_agent()
-        if best_agent is not None:
-            best_dir = self.run_dir / "test_eval_best"
-            print(f"[TestEval] Best checkpoint → {best_dir}")
-            best_score = self._eval_split_with_agent(best_agent, test_data, best_dir)
-            print(f"[TestEval] Best: {best_score:.1%}")
-        else:
-            print("[TestEval] No best checkpoint; skipping best-checkpoint eval.")
+        if best_agent is None:
+            print("[TestEval] No best checkpoint found.")
 
-        baseline_dir = self.run_dir / "test_eval_baseline"
-        if not (baseline_dir / "test_score.json").exists():
-            from src.typings.general import InstanceFactory
-            base_agent = InstanceFactory(**self.config["agent"]).create()
-            print(f"[TestEval] Baseline (no memory) → {baseline_dir}")
-            baseline_score = self._eval_split_with_agent(base_agent, test_data, baseline_dir)
-            print(f"[TestEval] Baseline: {baseline_score:.1%}")
-        else:
-            print("[TestEval] Baseline already computed; skipping.")
+        for split_label, path in [("test", test_path), ("id_test", id_test_path)]:
+            if not path:
+                continue
+            split_data = _load_required_json_list(Path(path), f"{split_label} split")
+            print(f"\n[TestEval] Running {split_label} evaluation ({len(split_data)} samples)...")
+            prefix = "id_test_eval" if split_label == "id_test" else "test_eval"
+
+            if best_agent is not None:
+                best_dir = self.run_dir / f"{prefix}_best"
+                print(f"[TestEval] Best checkpoint → {best_dir}")
+                best_score = self._eval_split_with_agent(best_agent, split_data, best_dir, split_label)
+                print(f"[TestEval] {split_label} best: {best_score:.1%}")
+            else:
+                print(f"[TestEval] Skipping best-checkpoint eval for {split_label}.")
+
+            baseline_dir = self.run_dir / f"{prefix}_baseline"
+            if not (baseline_dir / "test_score.json").exists():
+                from src.typings.general import InstanceFactory
+                base_agent = InstanceFactory(**self.config["agent"]).create()
+                print(f"[TestEval] Baseline → {baseline_dir}")
+                baseline_score = self._eval_split_with_agent(base_agent, split_data, baseline_dir, split_label)
+                print(f"[TestEval] {split_label} baseline: {baseline_score:.1%}")
+            else:
+                print(f"[TestEval] {split_label} baseline already computed; skipping.")
+
+        self._write_test_scores_summary()
+
+    def _write_test_scores_summary(self) -> None:
+        summary = {}
+        for key in ("test_eval_best", "test_eval_baseline", "id_test_eval_best", "id_test_eval_baseline"):
+            f = self.run_dir / key / "test_score.json"
+            if f.exists():
+                summary[key] = json.loads(f.read_text())
+        with open(self.run_dir / "test_scores.json", "w", encoding="utf-8") as fh:
+            json.dump(summary, fh, indent=2)
 
     # ------------------------------------------------------------------
     # Reporting

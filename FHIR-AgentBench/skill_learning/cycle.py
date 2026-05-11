@@ -250,35 +250,27 @@ class FHIRSkillCycleRunner:
 
         csv_path = Path(data_cfg["csv"])
         test_data = _load_samples(csv_path, test_splits, data_cfg.get("test_limit"))
-        print(f"\n[TestEval] Running test set evaluation ({len(test_data)} samples)...")
+        print(f"\n[TestEval] Running ID test evaluation ({len(test_data)} samples)...")
 
         def _write_score(out_dir: Path, entries: List[Dict]) -> float:
             n_correct = sum(bool(e.get("is_correct")) for e in entries)
             score = n_correct / len(entries) if entries else 0.0
             out_dir.mkdir(parents=True, exist_ok=True)
             with open(out_dir / "test_score.json", "w", encoding="utf-8") as f:
-                json.dump({"split": "test", "score": score, "n_correct": n_correct, "n_total": len(entries)}, f, indent=2)
+                json.dump({"split": "id_test", "score": score, "n_correct": n_correct, "n_total": len(entries)}, f, indent=2)
             return score
-
-        # skills/learned/ was restored from skills/best/ at end of _run_inner
-        final_dir = self.run_dir / "test_eval_final"
-        print(f"[TestEval] Final skills (skills/learned/) → {final_dir}")
-        final_dir.mkdir(parents=True, exist_ok=True)
-        final_entries = self._run_samples(test_data, self.skill_repo, update_cycle=-1, append_path=final_dir / "test_runs.jsonl")
-        final_score = _write_score(final_dir, final_entries)
-        print(f"[TestEval] Final: {final_score:.1%}")
 
         if self._best_skills_dir.exists():
             best_repo = SkillRepository(
                 base_dir=self.skill_repo.base_dir,
                 learned_dir=self._best_skills_dir,
             )
-            best_dir = self.run_dir / "test_eval_best"
+            best_dir = self.run_dir / "id_test_eval_best"
             print(f"[TestEval] Best checkpoint (skills/best/) → {best_dir}")
             best_dir.mkdir(parents=True, exist_ok=True)
             best_entries = self._run_samples(test_data, best_repo, update_cycle=-1, append_path=best_dir / "test_runs.jsonl")
             best_score = _write_score(best_dir, best_entries)
-            print(f"[TestEval] Best: {best_score:.1%}")
+            print(f"[TestEval] ID test best: {best_score:.1%}")
         else:
             print("[TestEval] No best checkpoint; skipping best-checkpoint eval.")
 
@@ -289,14 +281,14 @@ class FHIRSkillCycleRunner:
             print("[BaselineTestEval] Skipped: no 'test_splits' configured.")
             return
 
-        baseline_dir = self.run_dir / "test_eval_baseline"
+        baseline_dir = self.run_dir / "id_test_eval_baseline"
         if (baseline_dir / "test_score.json").exists():
             print("[BaselineTestEval] Already complete; skipping.")
             return
 
         csv_path = Path(data_cfg["csv"])
         test_data = _load_samples(csv_path, test_splits, data_cfg.get("test_limit"))
-        print(f"\n[BaselineTestEval] Running baseline test set evaluation ({len(test_data)} samples)...")
+        print(f"\n[BaselineTestEval] Running ID test baseline evaluation ({len(test_data)} samples)...")
         baseline_dir.mkdir(parents=True, exist_ok=True)
         empty_repo = SkillRepository(
             base_dir=self.skill_repo.base_dir,
@@ -306,8 +298,8 @@ class FHIRSkillCycleRunner:
         n_correct = sum(bool(e.get("is_correct")) for e in baseline_entries)
         baseline_score = n_correct / len(baseline_entries) if baseline_entries else 0.0
         with open(baseline_dir / "test_score.json", "w", encoding="utf-8") as f:
-            json.dump({"split": "test", "score": baseline_score, "n_correct": n_correct, "n_total": len(baseline_entries)}, f, indent=2)
-        print(f"[BaselineTestEval] Baseline (no skills): {baseline_score:.1%}")
+            json.dump({"split": "id_test", "score": baseline_score, "n_correct": n_correct, "n_total": len(baseline_entries)}, f, indent=2)
+        print(f"[BaselineTestEval] ID test baseline (no skills): {baseline_score:.1%}")
 
     def _maybe_update_best_checkpoint(self, val_score: float, label: Any) -> None:
         """Snapshot learned/ to skills/best/ whenever val improves."""
