@@ -189,7 +189,15 @@ export AZURE_API_VERSION="2024-12-01-preview"
 
 No separate task worker is needed — each cycle script connects directly to the GCP FHIR API.
 
-Replace `<run-name>` with a unique identifier for each run.
+Run all six cycle types for one model with the helper script at the repo root:
+
+```bash
+conda activate fhir-agentbench
+cd ..                      # repo root (skill-agent-dev-min)
+./run_all.sh gpt41         # or gpt54mini / gpt54nano
+```
+
+Alternatively, run individual cycles by hand:
 
 ```bash
 conda activate fhir-agentbench

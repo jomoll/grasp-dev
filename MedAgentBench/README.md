@@ -52,7 +52,15 @@ python -m src.start_task -a --config configs/start_task.yaml
 
 **Terminal 3 — learning cycle:**
 
-Replace `<config>` with any config file from `configs/` and `<run-name>` with a unique name.
+Run all six cycle types for one model with the helper script at the repo root:
+
+```bash
+conda activate medagentbench
+cd ..                      # repo root (skill-agent-dev-min)
+./run_all.sh gpt41         # or gpt54mini / gpt54nano
+```
+
+Alternatively, run individual cycles by hand:
 
 ```bash
 conda activate medagentbench
