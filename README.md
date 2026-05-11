@@ -90,14 +90,18 @@ We can share results by committing `outputs/` back via pull request.
 
 ### Running experiments
 
-Each collaborator is assigned one model (`gpt41`, `gpt54mini`, or `gpt54nano`). Run all six cycle types for your model across all three benchmarks with the helper script at the repo root:
+Each collaborator is assigned one model (`gpt41`, `gpt54mini`, or `gpt54nano`). Each benchmark directory contains a `run_all.sh` script that runs all six cycle types for that model sequentially, passing `--resume` automatically so interrupted runs continue from where they left off:
 
 ```bash
-conda activate medagentbench   # or fhir-agentbench when running FHIR-AgentBench
-./run_all.sh gpt41             # replace gpt41 with your assigned model
+conda activate medagentbench
+cd MedAgentBench && ./run_all.sh gpt41    # replace gpt41 with your assigned model
+cd ../MedAgentBench-v2 && ./run_all.sh gpt41
+# FHIR-AgentBench is optional — skip if you don't have a GCP account
+conda activate fhir-agentbench
+cd ../FHIR-AgentBench && ./run_all.sh gpt41
 ```
 
-The script runs MedAgentBench → MedAgentBench-v2 → FHIR-AgentBench sequentially, passing `--resume` automatically so interrupted runs continue from where they left off. See the individual benchmark READMEs for setup and per-cycle commands if you prefer to run cycles manually. If you don't have a GCP account, skip FHIR-AgentBench — it is optional.
+See the individual benchmark READMEs for setup and per-cycle commands if you prefer to run cycles manually.
 
 ### Sharing results
 

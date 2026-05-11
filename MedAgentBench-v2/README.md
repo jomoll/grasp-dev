@@ -56,7 +56,6 @@ Run all six cycle types for one model with the helper script at the repo root:
 
 ```bash
 conda activate medagentbench
-cd ..                      # repo root (skill-agent-dev-min)
 ./run_all.sh gpt41         # or gpt54mini / gpt54nano
 ```
 
