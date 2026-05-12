@@ -72,7 +72,7 @@ def _load_completed(jsonl_path: Path) -> dict:
 def main():
     parser = argparse.ArgumentParser(description="Evaluate base or skilled agent on a data split")
     parser.add_argument("--config", "-c", type=str, default="configs/skill_cycle.yaml")
-    parser.add_argument("--split", "-s", choices=["dev", "val", "test"], default="test")
+    parser.add_argument("--split", "-s", choices=["dev", "val", "test", "id_test"], default="test")
     parser.add_argument(
         "--skills-dir", type=str, default=None,
         help="Path to a learned-skills directory. Omit to run the base agent.",
@@ -81,6 +81,8 @@ def main():
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--resume", "-r", action="store_true",
                         help="Skip already-completed samples and continue writing to the existing JSONL.")
+    parser.add_argument("--controller-address", type=str, default=None,
+                        help="Override task.controller_address from the config.")
     args = parser.parse_args()
 
     if args.force and args.resume:
@@ -124,7 +126,8 @@ def main():
 
     task_cfg = config["task"]
     fhir_api_base = task_cfg["fhir_api_base"]
-    task_client = TaskClient(name=task_cfg["name"], controller_address=task_cfg["controller_address"])
+    controller_address = args.controller_address or task_cfg["controller_address"]
+    task_client = TaskClient(name=task_cfg["name"], controller_address=controller_address)
 
     _tmpdir = None
     if args.skills_dir:

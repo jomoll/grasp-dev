@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Dict, List
 
 from .pipeline_adapter import ExPeLPipelineAdapter
@@ -27,9 +28,15 @@ class ExPeLAwareAgent:
             )
             if first_user_idx is not None and is_first_decision:
                 existing = str(modified[first_user_idx].get("content") or "")
+                try:
+                    prompt_data = json.loads(existing)
+                    prompt_data["behavioral_skills"] = rule_block
+                    new_content = json.dumps(prompt_data, indent=2)
+                except (json.JSONDecodeError, TypeError, AttributeError):
+                    new_content = rule_block + "\n\n## Current Task\n" + existing
                 modified[first_user_idx] = dict(
                     modified[first_user_idx],
-                    content=rule_block + "\n\n## Current Task\n" + existing,
+                    content=new_content,
                 )
 
         return self._delegate(modified, tools=tools)
