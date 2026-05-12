@@ -54,7 +54,12 @@ class MemoryAwareAgent(AgentClient):
         )
         existing = modified[last_user_idx].get("content") or ""
         if is_first_decision:
-            new_content = memory_block + "\n\n" + existing
+            try:
+                prompt_data = json.loads(existing)
+                prompt_data["behavioral_skills"] = memory_block
+                new_content = json.dumps(prompt_data, indent=2)
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                new_content = memory_block + "\n\n" + existing
         else:
             new_content = existing + "\n\n" + memory_block
         modified[last_user_idx] = dict(modified[last_user_idx], content=new_content)

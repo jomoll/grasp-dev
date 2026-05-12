@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from typing import Any, Dict, List
 
 from ..agent import AgentClient
@@ -31,7 +32,12 @@ class EvoMemoryAwareAgent(AgentClient):
         )
         existing = modified[last_user_idx].get("content") or ""
         if is_first_decision:
-            new_content = memory_block + "\n\n## Current Task\n" + existing
+            try:
+                prompt_data = json.loads(existing)
+                prompt_data["behavioral_skills"] = memory_block
+                new_content = json.dumps(prompt_data, indent=2)
+            except (json.JSONDecodeError, TypeError, AttributeError):
+                new_content = memory_block + "\n\n## Current Task\n" + existing
         else:
             new_content = existing + "\n\n" + memory_block
         modified[last_user_idx] = dict(modified[last_user_idx], content=new_content)
