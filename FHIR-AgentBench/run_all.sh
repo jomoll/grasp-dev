@@ -9,13 +9,19 @@ if [[ -z "$MODEL" ]]; then
     exit 1
 fi
 
+RUN_NAME="run_001"
+
 cd "$(dirname "$0")"
 
 for config in configs/*_cycle_${MODEL}.yaml; do
     [[ -e "$config" ]] || { echo "No configs matched for model '$MODEL'"; exit 1; }
     base="$(basename "$config" .yaml)"
     module="${base%_*}"
+    if [[ -f "outputs/${base}/${RUN_NAME}/id_test_eval_best/test_score.json" ]]; then
+        echo "--- $config: already complete, skipping ---"
+        continue
+    fi
     echo ""
     echo "--- $config ---"
-    python "${module}.py" --config "$config" --resume
+    python "${module}.py" --config "$config" --run-name "$RUN_NAME" --resume
 done
