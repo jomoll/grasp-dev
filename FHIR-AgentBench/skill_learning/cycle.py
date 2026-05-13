@@ -352,7 +352,6 @@ class FHIRSkillCycleRunner:
             print(f"[Baseline] Val: {score:.1%}")
             val_scores.append({"epoch": -1, "score": score})
             (self.run_dir / "val_scores.json").write_text(json.dumps(val_scores, indent=2), encoding="utf-8")
-            self._maybe_update_best_checkpoint(score, "baseline")
 
         prev_taxonomy: Dict[str, str] = {}
         prev_results: Optional[Dict[str, bool]] = None

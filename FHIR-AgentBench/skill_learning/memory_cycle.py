@@ -434,9 +434,6 @@ class FHIRBatchMemoryCycleRunner:
                     print(f"[Resume] Baseline already done (val={s:.1%}), skipping")
                     if not any(e["epoch"] == -1 for e in val_scores):
                         val_scores.insert(0, {"epoch": -1, "score": s})
-                    if s > self._best_val_score:
-                        self._best_val_score = s
-                        self._best_checkpoint_label = "baseline"
                 except Exception:
                     pass
             else:
@@ -448,7 +445,6 @@ class FHIRBatchMemoryCycleRunner:
                     json.dumps({"epoch": -1, "score": score}, indent=2), encoding="utf-8"
                 )
                 val_scores_path.write_text(json.dumps(val_scores, indent=2), encoding="utf-8")
-                self._maybe_update_best_checkpoint(score, "baseline")
 
         for epoch in range(self.epochs):
             epoch_dir = self.run_dir / f"epoch_{epoch}"

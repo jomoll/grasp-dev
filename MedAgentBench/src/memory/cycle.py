@@ -125,9 +125,6 @@ class BatchMemoryCycleRunner:
                 try:
                     s = json.loads(baseline_score_path.read_text(encoding="utf-8"))["score"]
                     print(f"[Resume] Baseline already done (val={s:.1%}), skipping")
-                    if s > self._best_val_score:
-                        self._best_val_score = s
-                        self._best_checkpoint_label = "baseline"
                 except Exception:
                     pass
             else:
@@ -137,7 +134,6 @@ class BatchMemoryCycleRunner:
                 baseline_dir.mkdir(exist_ok=True)
                 baseline_score = self._evaluate_val(epoch="baseline", epoch_dir=baseline_dir)
                 print(f"[Baseline] Val: {baseline_score:.1%}")
-                self._maybe_update_best_checkpoint(baseline_score, "baseline")
 
         for epoch in range(self.epochs):
             epoch_dir = self.run_dir / f"epoch_{epoch}"
