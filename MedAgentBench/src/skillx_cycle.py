@@ -17,12 +17,27 @@ from pathlib import Path
 import yaml
 
 
+def _apply_overrides(config: dict, overrides) -> None:
+    for item in overrides or []:
+        if "=" not in item:
+            print(f"Invalid --set value (expected key=value): {item}", file=sys.stderr)
+            sys.exit(1)
+        key, _, raw = item.partition("=")
+        keys = key.split(".")
+        node = config
+        for k in keys[:-1]:
+            if k not in node or not isinstance(node[k], dict):
+                node[k] = {}
+            node = node[k]
+        node[keys[-1]] = yaml.safe_load(raw)
+
 def main():
     parser = argparse.ArgumentParser(description="SkillX cycle for MedAgentBench")
     parser.add_argument("--config", "-c", type=str, default="configs/skillx_cycle.yaml")
     parser.add_argument("--run-name", "-n", type=str, default=None)
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--resume", "-r", action="store_true")
+    parser.add_argument("--set", metavar="KEY=VALUE", nargs="*", default=[])
     args = parser.parse_args()
     if args.force and args.resume:
         print("--force and --resume are mutually exclusive.", file=sys.stderr)
@@ -34,6 +49,7 @@ def main():
         sys.exit(1)
     with config_path.open() as f:
         config = yaml.safe_load(f)
+        _apply_overrides(config, args.set)
 
     run_name = args.run_name or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = Path(config.get("output_dir", "outputs/skillx_cycle"))

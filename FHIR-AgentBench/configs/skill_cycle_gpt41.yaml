@@ -23,7 +23,7 @@ data:
   - train
   val_splits:
   - valid
-  test_splits:
+  test_splits: ["test"]
   - test
   dev_limit: 120
   val_limit: 80

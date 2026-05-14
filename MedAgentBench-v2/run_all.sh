@@ -10,6 +10,7 @@ if [[ -z "$MODEL" ]]; then
 fi
 
 RUN_NAME="run_001"
+SEED=$((10#${RUN_NAME##*_}))
 
 cd "$(dirname "$0")"
 
@@ -23,5 +24,5 @@ for config in configs/*_cycle_${MODEL}.yaml; do
     fi
     echo ""
     echo "--- $config ---"
-    python -m "src.$module" --config "$config" --run-name "$RUN_NAME" --resume
+    python -m "src.$module" --config "$config" --run-name "$RUN_NAME" --resume --set "cycle.seed=$SEED"
 done

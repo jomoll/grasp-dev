@@ -1129,17 +1129,34 @@ class FHIRSkillCycleRunner:
                 f.write(json.dumps(self._json_safe(entry), default=str) + "\n")
 
 
+def _apply_overrides(config: dict, overrides) -> None:
+    for item in overrides or []:
+        if "=" not in item:
+            print(f"Invalid --set value (expected key=value): {item}", file=sys.stderr)
+            sys.exit(1)
+        key, _, raw = item.partition("=")
+        keys = key.split(".")
+        node = config
+        for k in keys[:-1]:
+            if k not in node or not isinstance(node[k], dict):
+                node[k] = {}
+            node = node[k]
+        node[keys[-1]] = yaml.safe_load(raw)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Skill-learning cycle for FHIR-AgentBench")
     parser.add_argument("--config", "-c", default="configs/skill_cycle.yaml")
     parser.add_argument("--run-name", "-n", default=None)
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--resume", "-r", action="store_true")
+    parser.add_argument("--set", metavar="KEY=VALUE", nargs="*", default=[])
     args = parser.parse_args()
 
     config_path = Path(args.config)
     with open(config_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
+    _apply_overrides(config, args.set)
 
     run_name = args.run_name or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     run_dir = Path(config.get("output_dir", "outputs/skill_cycle")) / run_name
