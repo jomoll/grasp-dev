@@ -52,22 +52,27 @@ python -m src.start_task -a --config configs/start_task.yaml --base-port 5071
 
 **Terminal 2 — learning cycle:**
 
-Run all six cycle types for one model with the helper script at the repo root:
+Run all six methods for one model backend with the helper script at the repo root:
 
 ```bash
 conda activate medagentbench
-./run_all.sh gpt41         # or gpt54mini / gpt54nano
+./run_all.sh gptoss        # or deepseek / gemini / gpt4 / gpt5 / local
 ```
 
-Alternatively, run individual cycles by hand:
+The backend is selected with `--agent` (or `GRASP_BACKEND`, or a config's
+`agent_preset:`); see [configs/agents/README.md](configs/agents/README.md) for
+the presets and the environment variables each needs. Any config below can be
+run with `--agent <backend>` to override its default model.
+
+Alternatively, run individual methods by hand:
 
 ```bash
 conda activate medagentbench
 
-# skill_cycle
-python -m src.skill_cycle --config configs/skill_cycle_gpt41.yaml      --run-name run_001
-python -m src.skill_cycle --config configs/skill_cycle_gpt54mini.yaml   --run-name run_001
-python -m src.skill_cycle --config configs/skill_cycle_gpt54nano.yaml   --run-name run_001
+# grasp (GRASP, ours)
+python -m src.grasp --config configs/grasp_gpt41.yaml      --run-name run_001
+python -m src.grasp --config configs/grasp_gpt54mini.yaml   --run-name run_001
+python -m src.grasp --config configs/grasp_gpt54nano.yaml   --run-name run_001
 
 # memory_cycle
 python -m src.memory_cycle --config configs/memory_cycle_gpt41.yaml     --run-name run_001
@@ -100,7 +105,7 @@ python -m src.skillx_cycle --config configs/skillx_cycle_gpt54nano.yaml  --run-n
 If a run is interrupted (API timeout, machine restart, etc.), resume it with the same `--run-name` and add `--resume`. Completed epochs and dev batches are skipped automatically.
 
 ```bash
-python -m src.skill_cycle --config configs/skill_cycle_gpt41.yaml --run-name run_001 --resume
+python -m src.grasp --config configs/grasp_gpt41.yaml --run-name run_001 --resume
 ```
 
 The `--resume` flag works identically for all six cycle types.
@@ -130,11 +135,11 @@ To run a standalone evaluation manually (e.g. for the base agent or a custom ski
 
 ```bash
 # Base agent (no learned skills)
-python -m src.run_eval --config configs/skill_cycle_gpt41.yaml --split test --run-name base_test
+python -m src.run_eval --config configs/grasp_gpt41.yaml --split test --run-name base_test
 
 # Best skills from a completed run
-python -m src.run_eval --config configs/skill_cycle_gpt41.yaml --split test \
-    --skills-dir outputs/skill_cycle_gpt41/run_001/skills/best --run-name run_001_best_test
+python -m src.run_eval --config configs/grasp_gpt41.yaml --split test \
+    --skills-dir outputs/grasp_gpt41/run_001/skills/best --run-name run_001_best_test
 ```
 
 The task worker must be running for both automatic and manual evaluation.
@@ -167,7 +172,7 @@ The task worker must be running for both automatic and manual evaluation.
 
 ```
 outputs/
-└── skill_cycle_gpt41/
+└── grasp_gpt41/
     └── run_001/
         ├── run.log
         ├── val_scores.json

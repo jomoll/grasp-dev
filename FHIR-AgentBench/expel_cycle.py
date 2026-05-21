@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 import yaml
+from fhir_agent_preset import apply_backend
 
 
 def _apply_overrides(config: dict, overrides) -> None:
@@ -36,6 +37,8 @@ def main():
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--resume", "-r", action="store_true")
     parser.add_argument("--set", metavar="KEY=VALUE", nargs="*", default=[])
+    parser.add_argument("--agent", "-a", default=None, metavar="PRESET",
+                        help="Backend preset (configs/agents/<PRESET>.yaml); overrides GRASP_BACKEND and agent_preset.")
     args = parser.parse_args()
     if args.force and args.resume:
         print("--force and --resume are mutually exclusive.", file=sys.stderr)
@@ -48,6 +51,7 @@ def main():
     with config_path.open() as f:
         config = yaml.safe_load(f)
         _apply_overrides(config, args.set)
+    apply_backend(config, args.agent)
 
     run_name = args.run_name or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = Path(config.get("output_dir", "outputs/expel_cycle"))

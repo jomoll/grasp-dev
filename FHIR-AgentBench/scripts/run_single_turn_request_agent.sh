@@ -1,5 +1,5 @@
-model="openai/gpt-oss-120b"
-base_url="http://10.32.16.43:4000"
+model="${LLM_MODEL:-openai/gpt-oss-120b}"
+base_url="${LLM_BASE_URL:-http://localhost:4000}"
 agent_strategy="single_turn_request"
 python run_agent.py \
   --agent_strategy $agent_strategy \

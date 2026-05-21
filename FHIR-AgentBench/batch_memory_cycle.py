@@ -13,6 +13,7 @@ import sys
 from pathlib import Path
 
 import yaml
+from fhir_agent_preset import apply_backend
 
 
 def _apply_overrides(config: dict, overrides) -> None:
@@ -39,6 +40,8 @@ def main():
         help="Continue an interrupted run, skipping already-completed epochs",
     )
     parser.add_argument("--set", metavar="KEY=VALUE", nargs="*", default=[])
+    parser.add_argument("--agent", "-a", default=None, metavar="PRESET",
+                        help="Backend preset (configs/agents/<PRESET>.yaml); overrides GRASP_BACKEND and agent_preset.")
     args = parser.parse_args()
     if args.force and args.resume:
         print("--force and --resume are mutually exclusive.", file=sys.stderr)
@@ -51,6 +54,7 @@ def main():
     with open(config_path) as f:
         config = yaml.safe_load(f)
         _apply_overrides(config, args.set)
+    apply_backend(config, args.agent)
 
     run_name = args.run_name or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = Path(config.get("output_dir", "outputs/batch_memory_cycle"))

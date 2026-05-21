@@ -1,132 +1,95 @@
-# skill-agent-dev-min
+# GRASP — reproduction code
 
-Self-improving LLM agent experiments on FHIR medical benchmarks. Two benchmarks are required; a third is optional.
+Code and instructions to reproduce the experiments in the paper. GRASP is a
+self-improvement method that learns a small, regression-gated **skill library**
+from an agent's own failure traces. This repository contains the four benchmark
+families used in the paper, each as a self-contained directory:
 
-| Benchmark | Task | Dev | Val | ID test | OOD test | Setup |
-|---|---|---|---|---|---|---|
-| `MedAgentBench/` | FHIR reads/writes against a live FHIR server (10 clinical task types, v1 data) | 96 | 80 | 64 | 60 | Docker |
-| `MedAgentBench-v2/` | Harder FHIR tasks — multi-step decision trees, time-window reasoning, coordinated writes (10 redesigned task types) | 96 | 80 | 64 | 60 | Docker |
-| `FHIR-AgentBench/` *(optional)* | QA over real MIMIC-IV patient data via Google Cloud Healthcare FHIR API | 120 | 80 | 80 | — | GCP account required |
+| Directory | Benchmark | Role in paper | Setup |
+|---|---|---|---|
+| `MedAgentBench/` | FHIR reads/writes against a live FHIR server | primary (clinical) | Docker |
+| `MedAgentBench-v2/` | Harder FHIR tasks: multi-step decisions, coordinated writes | primary (clinical) | Docker |
+| `FHIR-AgentBench/` | Structured clinical QA / tool use on an independent FHIR store | supporting (clinical) | GCP Healthcare API |
+| `AgentBench/` | Four non-clinical environments: OS, DBBench, WebShop, ALFWorld | supporting (generality) | Docker |
 
-FHIR-AgentBench is optional — if you have a GCP account it is straightforward to set up (see [FHIR-AgentBench/README.md](FHIR-AgentBench/README.md)); if not, running MedAgentBench and MedAgentBench-v2 is all that is needed.
+## Methods
 
-Six learning methods are provided per benchmark:
+The paper compares GRASP against a no-skills baseline and five self-improvement
+methods. All six learning methods are implemented in each benchmark directory.
 
-| Method | Config prefix | Description |
+| Code name | Paper name |
+|---|---|
+| `grasp` | **GRASP** (ours) |
+| `memory_cycle` | Sequential memory |
+| `batch_memory_cycle` | Batch memory |
+| `expel_cycle` | ExpeL |
+| `evo_memory_cycle` | Evo-MedAgent |
+| `skillx_cycle` | SkillX |
+
+The no-skills baseline is produced automatically by every run (`run_baseline: true`).
+The four AgentBench environments are reported for GRASP vs. no-skills only.
+
+## Model backends
+
+The executing agent and skill-writer use the same model. Five backends from the
+paper are selectable at run time — no model identity is baked into a config:
+
+| Preset | Model (paper) | Provider |
 |---|---|---|
-| `skill_cycle` | `skill_cycle_*` | Skill writing from failure traces, probe-scored acceptance gate |
-| `memory_cycle` | `memory_cycle_*` | Sequential flat correction notes after each failure |
-| `batch_memory_cycle` | `batch_memory_cycle_*` | Batch-cadence flat correction notes |
-| `evo_memory_cycle` | `evo_memory_cycle_*` | Retrieved episodic + semantic memory with utility tracking |
-| `expel_cycle` | `expel_cycle_*` | ExpeL-style rule extraction from successful trajectories |
-| `skillx_cycle` | `skillx_cycle_*` | SkillX functional skill extraction with plan rewriting |
+| `gptoss` | gpt-oss-120b | self-hosted, OpenAI-compatible |
+| `deepseek` | DeepSeek V4 Flash | self-hosted, OpenAI-compatible |
+| `gemini` | Gemini 3.1 Flash Lite | Google Vertex AI |
+| `gpt5` | GPT-5.4 (low) | Azure OpenAI (Responses API) |
+| `gpt4` | GPT-4.1 | Azure OpenAI |
+| `local` | any | generic OpenAI-compatible endpoint |
 
-For MedAgentBench and MedAgentBench-v2, each method has three config variants:
-
-| Suffix | Model | API |
-|---|---|---|
-| `_gpt41` | `gpt-4.1` | Azure Chat Completions via LiteLLM |
-| `_gpt54mini` | `gpt-5.4-mini` | Azure Responses API (reasoning, low effort + low verbosity) |
-| `_gpt54nano` | `gpt-5.4-nano` | Azure Responses API (reasoning, low effort + low verbosity) |
-
-FHIR-AgentBench follows the same three-variant pattern using the same Azure credentials.
-
----
-
-## Prerequisites
-
-- Python 3.9
-- Docker (for the MedAgentBench FHIR server)
-- Azure OpenAI access
-- *(FHIR-AgentBench only)* GCP account with Cloud Healthcare API enabled and `gcloud` CLI authenticated — see [FHIR-AgentBench/README.md](FHIR-AgentBench/README.md) for step-by-step instructions
-
-## Environment variables
+Select a backend per run with `--agent <preset>`, the `GRASP_BACKEND`
+environment variable, or a config's `agent_preset:` field (precedence in that
+order). Presets read endpoints, keys, and projects from environment variables;
+**no secrets are stored in the repository**. Each benchmark has a
+`configs/agents/README.md` listing the required variables.
 
 ```bash
-# GPT-4.1 (Chat Completions via LiteLLM)
-export AZURE_OPENAI_API_KEY="..."
-export AZURE_API_BASE="https://YOUR-RESOURCE-NAME.openai.azure.com"
-export AZURE_API_VERSION="2024-12-01-preview"
+# example: self-hosted gpt-oss-120b
+export OSS_API_BASE="http://localhost:8000/v1"
 
-# GPT-5.4-mini / GPT-5.4-nano (Responses API — base_url set per config)
-export AZURE_OPENAI_API_KEY="..."   # same key, picked up automatically
+# example: Gemini via Vertex
+export GOOGLE_CLOUD_PROJECT="my-project"
+gcloud auth application-default login
+
+# example: GPT-4.1 / GPT-5.4 via Azure
+export AZURE_API_KEY="..." AZURE_API_BASE="https://YOUR-RESOURCE.openai.azure.com" AZURE_API_VERSION="2024-12-01-preview"
+export AZURE_OPENAI_API_KEY="..." AZURE_OPENAI_BASE_URL="https://YOUR-RESOURCE.openai.azure.com/openai/v1/"
 ```
 
-Then edit the `base_url` in each `_gpt54mini` / `_gpt54nano` config to your Azure resource name:
-```yaml
-base_url: "https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/"
+## Running
+
+Each directory has its own README with environment setup (conda, Docker, data)
+and a `run_all.sh <backend> [run_name]` helper that runs all six methods for one
+backend and seed:
+
+```bash
+# clinical benchmarks
+cd MedAgentBench    && ./run_all.sh gptoss run_001
+cd MedAgentBench-v2 && ./run_all.sh gptoss run_001
+cd FHIR-AgentBench  && ./run_all.sh gptoss run_001   # requires GCP
+
+# non-clinical environments (GRASP only, per paper)
+cd AgentBench       && ./run_all.sh gptoss run_001
 ```
 
-## Quick start
-
-See each benchmark's README for setup and run commands:
+The trailing integer of `run_name` is the seed (`run_001` → seed 1); the paper
+uses three seeds for proprietary models and five for open-source models. See
+each benchmark's README for prerequisites and per-method commands.
 
 - [MedAgentBench/README.md](MedAgentBench/README.md)
 - [MedAgentBench-v2/README.md](MedAgentBench-v2/README.md)
-- [FHIR-AgentBench/README.md](FHIR-AgentBench/README.md) *(optional — requires GCP)*
+- [FHIR-AgentBench/README.md](FHIR-AgentBench/README.md)
+- [AgentBench/README.md](AgentBench/README.md)
 
----
+## Outputs and skill libraries
 
-## Collaboration
-
-We can share results by committing `outputs/` back via pull request.
-
-### One-time setup
-
-1. Fork this repository.
-2. Clone your fork:
-   ```bash
-   git clone https://github.com/<your-username>/skill-agent-dev-min.git
-   cd skill-agent-dev-min
-   ```
-3. Follow the setup instructions in the benchmark READMEs (conda environment, Docker).
-4. Set your Azure credentials:
-   ```bash
-   export AZURE_OPENAI_API_KEY="..."
-   export AZURE_API_BASE="https://YOUR-RESOURCE-NAME.openai.azure.com"   # for GPT-4.1
-   export AZURE_API_VERSION="2024-12-01-preview"
-   ```
-   Edit the `base_url` field in each `_gpt54mini` / `_gpt54nano` config to your resource name.
-
-### Running experiments
-
-Each collaborator is assigned one model (`gpt41`, `gpt54mini`, or `gpt54nano`). Each benchmark directory contains a `run_all.sh` script that runs all six cycle types for that model sequentially, passing `--resume` automatically so interrupted runs continue from where they left off:
-
-```bash
-conda activate medagentbench
-cd MedAgentBench && ./run_all.sh gpt41    # replace gpt41 with your assigned model
-cd ../MedAgentBench-v2 && ./run_all.sh gpt41
-# FHIR-AgentBench is optional — skip if you don't have a GCP account
-conda activate fhir-agentbench
-cd ../FHIR-AgentBench && ./run_all.sh gpt41
-```
-
-See the individual benchmark READMEs for setup and per-cycle commands if you prefer to run cycles manually.
-
-### Sharing results
-
-Commit your `outputs/` directories and open a pull request against `main`:
-
-```bash
-git checkout -b results/<your-name>
-git add MedAgentBench/outputs/ MedAgentBench-v2/outputs/
-# If you ran FHIR-AgentBench, include it too:
-# git add FHIR-AgentBench/outputs/
-git commit -m "Add experiment results: <model(s)>, <benchmark(s)>"
-git push -u origin results/<your-name>
-# Then open a PR on GitHub
-```
-
-What to include:
-
-| Path | Required | Notes |
-|---|---|---|
-| `outputs/<method>/<run>/val_scores.json` | yes | val learning curve |
-| `outputs/<method>/<run>/test_eval_best/` | yes | OOD test score, best-val checkpoint |
-| `outputs/<method>/<run>/test_eval_baseline/` | yes | OOD test score, no-skill baseline |
-| `outputs/<method>/<run>/id_test_eval_best/` | yes | in-dist test score, best-val checkpoint |
-| `outputs/<method>/<run>/id_test_eval_baseline/` | yes | in-dist test score, no-skill baseline |
-| `outputs/<method>/<run>/test_scores.json` | yes | summary of all four test evaluations |
-| `outputs/<method>/<run>/skills/` | yes | learned skills — needed for transferability experiments |
-| `outputs/<method>/<run>/run.log` | optional | full training log |
-| `outputs/<method>/<run>/epoch_*/` | optional | per-epoch dev/val traces |
+Per-seed runs and the learned skill libraries are released under each
+benchmark's `outputs/` directory (`outputs/<method>_<backend>/run_<seed>/`),
+including validation curves, test/OOD scores, and the best-validation skill
+library used for the cross-model and cross-benchmark transfer experiments.

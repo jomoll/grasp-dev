@@ -21,6 +21,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import pandas as pd
 import yaml
+from fhir_agent_preset import apply_backend
 
 try:
     from tqdm import tqdm
@@ -1151,15 +1152,18 @@ def main() -> None:
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--resume", "-r", action="store_true")
     parser.add_argument("--set", metavar="KEY=VALUE", nargs="*", default=[])
+    parser.add_argument("--agent", "-a", default=None, metavar="PRESET",
+                        help="Backend preset (configs/agents/<PRESET>.yaml); overrides GRASP_BACKEND and agent_preset.")
     args = parser.parse_args()
 
     config_path = Path(args.config)
     with open(config_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
     _apply_overrides(config, args.set)
+    apply_backend(config, args.agent)
 
     run_name = args.run_name or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    run_dir = Path(config.get("output_dir", "outputs/skill_cycle")) / run_name
+    run_dir = Path(config.get("output_dir", "outputs/grasp")) / run_name
     if args.force and args.resume:
         raise SystemExit("--force and --resume are mutually exclusive.")
     if run_dir.exists() and args.force:

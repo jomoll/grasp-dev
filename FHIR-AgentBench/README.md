@@ -189,22 +189,27 @@ export AZURE_API_VERSION="2024-12-01-preview"
 
 No separate task worker is needed — each cycle script connects directly to the GCP FHIR API.
 
-Run all six cycle types for one model with the helper script at the repo root:
+Run all six methods for one model backend with the helper script at the repo root:
 
 ```bash
 conda activate fhir-agentbench
-./run_all.sh gpt41         # or gpt54mini / gpt54nano
+./run_all.sh gptoss        # or deepseek / gemini / gpt4 / gpt5 / local
 ```
 
-Alternatively, run individual cycles by hand:
+The backend is selected with `--agent` (or `GRASP_BACKEND`, or a config's
+`agent_preset:`); see [configs/agents/README.md](configs/agents/README.md) for
+the presets and the environment variables each needs. Any config below can be
+run with `--agent <backend>` to override its default model.
+
+Alternatively, run individual methods by hand:
 
 ```bash
 conda activate fhir-agentbench
 
-# skill_cycle
-python skill_cycle.py --config configs/skill_cycle_gpt41.yaml     --run-name run_001
-python skill_cycle.py --config configs/skill_cycle_gpt54mini.yaml --run-name run_001
-python skill_cycle.py --config configs/skill_cycle_gpt54nano.yaml --run-name run_001
+# grasp (GRASP, ours)
+python grasp.py --config configs/grasp_gpt41.yaml     --run-name run_001
+python grasp.py --config configs/grasp_gpt54mini.yaml --run-name run_001
+python grasp.py --config configs/grasp_gpt54nano.yaml --run-name run_001
 
 # memory_cycle
 python memory_cycle.py --config configs/memory_cycle_gpt41.yaml     --run-name run_001
@@ -235,7 +240,7 @@ python skillx_cycle.py --config configs/skillx_cycle_gpt54nano.yaml --run-name r
 **Resuming an interrupted run:**
 
 ```bash
-python skill_cycle.py --config configs/skill_cycle_gpt41.yaml --run-name run_001 --resume
+python grasp.py --config configs/grasp_gpt41.yaml --run-name run_001 --resume
 ```
 
 The `--resume` flag works identically for all six cycle types.
@@ -258,7 +263,7 @@ outputs/<method>/<run-name>/
 
 ```
 outputs/
-└── skill_cycle_gpt41/
+└── grasp_gpt41/
     └── run_001/
         ├── run.log
         ├── val_scores.json

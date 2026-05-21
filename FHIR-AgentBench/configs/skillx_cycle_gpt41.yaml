@@ -23,7 +23,6 @@ data:
   val_splits:
   - valid
   test_splits: ["test"]
-  - test
   dev_limit: 120
   val_limit: 80
   test_limit: 80
