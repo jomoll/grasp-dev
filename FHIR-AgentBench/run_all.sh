@@ -20,7 +20,7 @@ SEED=$((10#${RUN_NAME##*_}))
 cd "$(dirname "$0")"
 
 for method in grasp memory_cycle batch_memory_cycle evo_memory_cycle expel_cycle skillx_cycle; do
-    base="configs/${method}_gpt41.yaml"   # structural base; --agent selects the model
+    base="configs/${method}.yaml"   # structural base; --agent selects the model
     [[ -e "$base" ]] || { echo "Missing base config: $base" >&2; exit 1; }
     out="outputs/${method}_${BACKEND}"
     if [[ -f "${out}/${RUN_NAME}/id_test_eval_best/test_score.json" ]]; then

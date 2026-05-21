@@ -1147,7 +1147,7 @@ def _apply_overrides(config: dict, overrides) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Skill-learning cycle for FHIR-AgentBench")
-    parser.add_argument("--config", "-c", default="configs/skill_cycle.yaml")
+    parser.add_argument("--config", "-c", default="configs/grasp.yaml")
     parser.add_argument("--run-name", "-n", default=None)
     parser.add_argument("--force", "-f", action="store_true")
     parser.add_argument("--resume", "-r", action="store_true")

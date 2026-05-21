@@ -11,7 +11,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from src.agent_preset import resolve_agent, resolve_backend_name
+from src.agent_preset import resolve_backends
 
 
 def _apply_overrides(config: dict, overrides) -> None:
@@ -54,11 +54,11 @@ def main():
         _apply_overrides(config, args.set)
     # Resolve model backend (CLI --agent > GRASP_BACKEND env > config.agent_preset);
     # keep the expanded block (and any keys) out of the snapshotted config.yaml.
-    _backend = resolve_backend_name(config, args.agent)
-    _agent_block = resolve_agent(config, config_path, cli_agent=args.agent)
-    if _backend:  # a named preset was selected; keep expanded keys out of the snapshot
+    _backend, _agent_block, _updater_block = resolve_backends(config, config_path, cli_agent=args.agent)
+    if _backend:  # named preset selected; keep expanded keys out of the snapshot
         config["agent_preset"] = _backend
         config.pop("agent", None)
+        config.pop("updater", None)
 
     run_name = args.run_name or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     output_dir = Path(config.get("output_dir", "outputs/evo_memory_cycle"))
@@ -79,6 +79,8 @@ def main():
     with (run_dir / "config.yaml").open("w") as f:
         yaml.dump(config, f, default_flow_style=False)
     config["agent"] = _agent_block
+    if _updater_block is not None:
+        config["updater"] = _updater_block
 
     cycle_cfg = config.get("cycle", {})
     evo_cfg = config.get("evo_memory", {})

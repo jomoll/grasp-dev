@@ -3,14 +3,14 @@ Evaluate the base agent or a saved skill pack on any FHIR-AgentBench data split.
 
 Usage:
     # Base agent (no learned skills) on the test set
-    python run_eval.py --config configs/skill_cycle_code.yaml --split test --run-name base_test
+    python run_eval.py --config configs/grasp.yaml --split test --run-name base_test
 
     # Agent with best skills from a completed run on the test set
-    python run_eval.py --config configs/skill_cycle_code.yaml --split test \\
-        --skills-dir outputs/skill_cycle_code/run_001/skills/best --run-name run_001_best_test
+    python run_eval.py --config configs/grasp.yaml --split test \\
+        --skills-dir outputs/grasp_gptoss/run_001/skills/best --run-name run_001_best_test
 
     # Resume an interrupted run
-    python run_eval.py --config configs/skill_cycle_code.yaml --split test \\
+    python run_eval.py --config configs/grasp.yaml --split test \\
         --run-name run_001_best_test --resume
 """
 
@@ -87,7 +87,10 @@ def _load_completed(jsonl_path: Path) -> Dict[str, Dict]:
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate base or skilled agent on a FHIR-AgentBench split")
-    parser.add_argument("--config", "-c", type=str, default="configs/skill_cycle_code.yaml")
+    parser.add_argument("--config", "-c", type=str, default="configs/grasp.yaml")
+    parser.add_argument("--agent", "-a", type=str, default=None, metavar="PRESET",
+                        help="Backend preset (configs/agents/<PRESET>.yaml); "
+                             "overrides GRASP_BACKEND and agent_preset.")
     parser.add_argument("--split", "-s", choices=["dev", "val", "test"], default="test")
     parser.add_argument(
         "--skills-dir", type=str, default=None,
@@ -110,6 +113,10 @@ def main():
 
     with open(config_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
+
+    # Apply the selected model backend (config carries only an agent_preset name).
+    from fhir_agent_preset import apply_backend
+    apply_backend(config, args.agent)
 
     agent_cfg = config["agent"]
     if agent_cfg.get("project_id"):

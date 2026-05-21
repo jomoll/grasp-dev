@@ -18,6 +18,7 @@ the resolved block at the backend-appropriate location, which preserves the
 per-task decoding settings used in the paper regardless of backend.
 """
 
+import copy
 import os
 import re
 from pathlib import Path
@@ -67,6 +68,51 @@ def _apply_temperature(agent: dict, temperature) -> None:
         params["body"]["temperature"] = temperature
     else:  # LiteLLM / Vertex / Responses
         params["temperature"] = temperature
+
+
+def _get_decoding(block: dict):
+    """Read (temperature, max_tokens) from an agent block, any backend shape."""
+    params = block.get("parameters", {})
+    body = params.get("body")
+    if isinstance(body, dict):  # HTTP / OpenAI-compatible
+        return body.get("temperature"), body.get("max_tokens")
+    return params.get("temperature"), params.get("max_output_tokens")
+
+
+def _set_decoding(block: dict, temperature=None, max_tokens=None) -> None:
+    """Write decoding params into an agent block at the backend-appropriate path."""
+    params = block.setdefault("parameters", {})
+    body = params.get("body")
+    if isinstance(body, dict):  # HTTP / OpenAI-compatible
+        if temperature is not None:
+            body["temperature"] = temperature
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
+    else:  # LiteLLM / Vertex / Responses
+        if temperature is not None:
+            params["temperature"] = temperature
+        if max_tokens is not None:
+            params["max_output_tokens"] = max_tokens
+
+
+def resolve_backends(config: dict, config_path=None, cli_agent: str = None,
+                     agents_dir=None):
+    """Resolve the executing-agent block and, if the config has an ``updater``
+    block (the skill/memory/rule writer used by the baselines), a matching
+    writer block on the *same* backend that preserves the writer's own decoding
+    settings (temperature, max tokens).
+
+    Returns ``(backend_name, agent_block, updater_block_or_None)``. When no
+    preset is selected, inline blocks are returned unchanged.
+    """
+    name = resolve_backend_name(config, cli_agent)
+    agent_block = resolve_agent(config, config_path, cli_agent, agents_dir)
+    updater_block = config.get("updater")
+    if name and isinstance(updater_block, dict):
+        temperature, max_tokens = _get_decoding(updater_block)
+        updater_block = copy.deepcopy(agent_block)
+        _set_decoding(updater_block, temperature=temperature, max_tokens=max_tokens)
+    return name, agent_block, updater_block
 
 
 def resolve_agent(config: dict, config_path=None, cli_agent: str = None,

@@ -3,14 +3,14 @@ Evaluate the base agent or a saved skill pack on any data split.
 
 Usage:
     # Base agent (no learned skills) on the test set
-    python -m src.run_eval --config configs/skill_cycle.yaml --split test --run-name base_test
+    python -m src.run_eval --config configs/grasp.yaml --split test --run-name base_test
 
     # Agent with best skills from a completed run on the test set
-    python -m src.run_eval --config configs/skill_cycle.yaml --split test \\
-        --skills-dir outputs/skill_cycle/run_001/skills/best --run-name run_001_best_test
+    python -m src.run_eval --config configs/grasp.yaml --split test \\
+        --skills-dir outputs/grasp_gptoss/run_001/skills/best --run-name run_001_best_test
 
     # Resume an interrupted run
-    python -m src.run_eval --config configs/skill_cycle.yaml --split test \\
+    python -m src.run_eval --config configs/grasp.yaml --split test \\
         --run-name base_test --resume
 
 The task worker must already be running before invoking this script.
@@ -71,7 +71,9 @@ def _load_completed(jsonl_path: Path) -> dict:
 
 def main():
     parser = argparse.ArgumentParser(description="Evaluate base or skilled agent on a data split")
-    parser.add_argument("--config", "-c", type=str, default="configs/skill_cycle.yaml")
+    parser.add_argument("--config", "-c", type=str, default="configs/grasp.yaml")
+    parser.add_argument("--agent", "-a", type=str, default=None, metavar="PRESET",
+                        help="Backend preset (configs/agents/<PRESET>.yaml); overrides GRASP_BACKEND and agent_preset.")
     parser.add_argument("--split", "-s", choices=["dev", "val", "test", "id_test"], default="test")
     parser.add_argument(
         "--skills-dir", type=str, default=None,
@@ -96,6 +98,11 @@ def main():
 
     with open(config_path, encoding="utf-8") as f:
         config = yaml.safe_load(f)
+
+    # Resolve the model backend from the selected preset (configs carry only
+    # an agent_preset name, not an inline agent block).
+    from src.agent_preset import resolve_agent
+    config["agent"] = resolve_agent(config, config_path, cli_agent=args.agent)
 
     split_key = args.split
     if split_key not in config.get("data", {}):

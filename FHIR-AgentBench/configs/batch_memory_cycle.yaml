@@ -1,4 +1,8 @@
-output_dir: outputs/memory_cycle_gpt41
+# batch_memory_cycle — Batch memory
+# Model backend: select with --agent / GRASP_BACKEND, or change agent_preset.
+# See configs/agents/README.md for the available presets.
+output_dir: outputs/batch_memory_cycle
+agent_preset: gptoss
 agent:
   strategy: multi_turn_code_resource
   model: azure/gpt-4.1
@@ -22,7 +26,8 @@ data:
   - train
   val_splits:
   - valid
-  test_splits: ["test"]
+  test_splits:
+  - test
   dev_limit: 120
   val_limit: 80
   test_limit: 80

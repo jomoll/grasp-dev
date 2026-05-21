@@ -4,7 +4,7 @@
 #   python -m src.start_task -a --config configs/start_task.yaml --base-port 5071
 #
 # Then in a separate terminal:
-#   python -m src.skill_cycle --config configs/skill_cycle.yaml --run-name run_001
+#   python -m src.grasp --config configs/grasp.yaml --run-name run_001
 
 controller: "http://localhost:5070/api"
 

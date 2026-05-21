@@ -2,7 +2,7 @@
 Entry point for the skill-learning cycle.
 
 Usage:
-    python -m src.grasp --config configs/grasp_gpt41.yaml --run-name run_001
+    python -m src.grasp --config configs/grasp.yaml --run-name run_001
 
 The task worker must already be running before invoking this script.
 Start it with:
@@ -16,7 +16,7 @@ import sys
 from pathlib import Path
 
 import yaml
-from src.agent_preset import resolve_agent, resolve_backend_name
+from src.agent_preset import resolve_backends
 
 
 def _apply_overrides(config: dict, overrides) -> None:
@@ -38,8 +38,8 @@ def main():
         description="Skill-learning cycle for MedAgentBench"
     )
     parser.add_argument(
-        "--config", "-c", type=str, default="configs/skill_cycle.yaml",
-        help="Path to skill_cycle config file",
+        "--config", "-c", type=str, default="configs/grasp.yaml",
+        help="Path to GRASP config file",
     )
     parser.add_argument(
         "--run-name", "-n", type=str, default=None,
@@ -74,11 +74,11 @@ def main():
         _apply_overrides(config, args.set)
     # Resolve model backend (CLI --agent > GRASP_BACKEND env > config.agent_preset);
     # keep the expanded block (and any keys) out of the snapshotted config.yaml.
-    _backend = resolve_backend_name(config, args.agent)
-    _agent_block = resolve_agent(config, config_path, cli_agent=args.agent)
-    if _backend:  # a named preset was selected; keep expanded keys out of the snapshot
+    _backend, _agent_block, _updater_block = resolve_backends(config, config_path, cli_agent=args.agent)
+    if _backend:  # named preset selected; keep expanded keys out of the snapshot
         config["agent_preset"] = _backend
         config.pop("agent", None)
+        config.pop("updater", None)
 
     # Resolve run directory
     run_name = args.run_name or datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -101,6 +101,8 @@ def main():
     with open(run_dir / "config.yaml", "w") as f:
         yaml.dump(config, f, default_flow_style=False)
     config["agent"] = _agent_block
+    if _updater_block is not None:
+        config["updater"] = _updater_block
 
     # Print reproducibility header
     cycle_cfg = config.get("cycle", {})

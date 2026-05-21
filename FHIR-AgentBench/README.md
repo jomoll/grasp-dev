@@ -175,14 +175,22 @@ If `final_dataset/questions_answers_sql_fhir.csv` already exists, you can skip t
 
 ## Environment variables
 
-```bash
-# GPT-4.1
-export AZURE_OPENAI_API_KEY="..."
-export AZURE_API_BASE="https://YOUR-RESOURCE-NAME.openai.azure.com"
-export AZURE_API_VERSION="2024-12-01-preview"
+The model backend is chosen at run time with `--agent <preset>`; each preset
+reads its credentials/endpoint from environment variables. See
+[configs/agents/README.md](configs/agents/README.md) for the full list. For example:
 
-# GPT-5.4-mini / GPT-5.4-nano — same key; also edit base_url in each config:
-#   base_url: "https://YOUR-RESOURCE-NAME.openai.azure.com/openai/v1/"
+```bash
+# gptoss / deepseek / local — self-hosted, OpenAI-compatible
+export OSS_API_BASE="http://localhost:8000/v1"
+
+# gemini — Vertex AI (FHIR data access also uses GCP)
+export GOOGLE_CLOUD_PROJECT="my-project"; gcloud auth application-default login
+
+# gpt4 — Azure OpenAI
+export AZURE_API_KEY="..." AZURE_API_BASE="https://YOUR-RESOURCE.openai.azure.com" AZURE_API_VERSION="2024-12-01-preview"
+
+# gpt5 — Azure OpenAI v1 endpoint
+export AZURE_OPENAI_API_KEY="..." AZURE_OPENAI_BASE_URL="https://YOUR-RESOURCE.openai.azure.com/openai/v1/"
 ```
 
 ## Running experiments
@@ -206,44 +214,25 @@ Alternatively, run individual methods by hand:
 ```bash
 conda activate fhir-agentbench
 
-# grasp (GRASP, ours)
-python grasp.py --config configs/grasp_gpt41.yaml     --run-name run_001
-python grasp.py --config configs/grasp_gpt54mini.yaml --run-name run_001
-python grasp.py --config configs/grasp_gpt54nano.yaml --run-name run_001
-
-# memory_cycle
-python memory_cycle.py --config configs/memory_cycle_gpt41.yaml     --run-name run_001
-python memory_cycle.py --config configs/memory_cycle_gpt54mini.yaml --run-name run_001
-python memory_cycle.py --config configs/memory_cycle_gpt54nano.yaml --run-name run_001
-
-# batch_memory_cycle
-python batch_memory_cycle.py --config configs/batch_memory_cycle_gpt41.yaml     --run-name run_001
-python batch_memory_cycle.py --config configs/batch_memory_cycle_gpt54mini.yaml --run-name run_001
-python batch_memory_cycle.py --config configs/batch_memory_cycle_gpt54nano.yaml --run-name run_001
-
-# evo_memory_cycle
-python evo_memory_cycle.py --config configs/evo_memory_cycle_gpt41.yaml     --run-name run_001
-python evo_memory_cycle.py --config configs/evo_memory_cycle_gpt54mini.yaml --run-name run_001
-python evo_memory_cycle.py --config configs/evo_memory_cycle_gpt54nano.yaml --run-name run_001
-
-# expel_cycle
-python expel_cycle.py --config configs/expel_cycle_gpt41.yaml     --run-name run_001
-python expel_cycle.py --config configs/expel_cycle_gpt54mini.yaml --run-name run_001
-python expel_cycle.py --config configs/expel_cycle_gpt54nano.yaml --run-name run_001
-
-# skillx_cycle
-python skillx_cycle.py --config configs/skillx_cycle_gpt41.yaml     --run-name run_001
-python skillx_cycle.py --config configs/skillx_cycle_gpt54mini.yaml --run-name run_001
-python skillx_cycle.py --config configs/skillx_cycle_gpt54nano.yaml --run-name run_001
+# One config per method; choose the model with --agent (gptoss shown).
+python grasp.py              --config configs/grasp.yaml              --run-name run_001 --agent gptoss
+python memory_cycle.py       --config configs/memory_cycle.yaml       --run-name run_001 --agent gptoss
+python batch_memory_cycle.py --config configs/batch_memory_cycle.yaml --run-name run_001 --agent gptoss
+python evo_memory_cycle.py   --config configs/evo_memory_cycle.yaml   --run-name run_001 --agent gptoss
+python expel_cycle.py        --config configs/expel_cycle.yaml        --run-name run_001 --agent gptoss
+python skillx_cycle.py       --config configs/skillx_cycle.yaml       --run-name run_001 --agent gptoss
 ```
+
+Swap `--agent gptoss` for `deepseek`, `gemini`, `gpt4`, `gpt5`, or `local` to run
+another backend; the executing agent, skill/memory writer, and grader switch together.
 
 **Resuming an interrupted run:**
 
 ```bash
-python grasp.py --config configs/grasp_gpt41.yaml --run-name run_001 --resume
+python grasp.py --config configs/grasp.yaml --run-name run_001 --agent gptoss --resume
 ```
 
-The `--resume` flag works identically for all six cycle types.
+The `--resume` flag works identically for all six methods.
 
 ## Test set evaluation
 
@@ -254,7 +243,7 @@ outputs/<method>/<run-name>/
 ├── id_test_eval_best/     # in-dist test, best-val checkpoint
 │   ├── test_runs.jsonl
 │   └── test_score.json    # {split, score, n_correct, n_total}
-└── id_test_eval_baseline/ # in-dist test, no-skill baseline (skill_cycle only)
+└── id_test_eval_baseline/ # in-dist test, no-skill baseline (GRASP only)
     ├── test_runs.jsonl
     └── test_score.json
 ```
@@ -263,7 +252,7 @@ outputs/<method>/<run-name>/
 
 ```
 outputs/
-└── grasp_gpt41/
+└── grasp_gptoss/
     └── run_001/
         ├── run.log
         ├── val_scores.json
