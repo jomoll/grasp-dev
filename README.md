@@ -87,9 +87,31 @@ each benchmark's README for prerequisites and per-method commands.
 - [FHIR-AgentBench/README.md](FHIR-AgentBench/README.md)
 - [AgentBench/README.md](AgentBench/README.md)
 
-## Outputs and skill libraries
+## Released results
 
-Per-seed runs and the learned skill libraries are released under each
-benchmark's `outputs/` directory (`outputs/<method>_<backend>/run_<seed>/`),
-including validation curves, test/OOD scores, and the best-validation skill
-library used for the cross-model and cross-benchmark transfer experiments.
+All numbers behind the paper are released under **[`results/`](results/)** — the
+per-seed validation, test, and OOD accuracies for every cell of Tables 1–5, the
+learned skill libraries, the frozen transfer libraries, and the run
+configurations (prompts are in each benchmark's `src/`). Full agent traces are
+omitted to keep the mirror small (~40 MB vs ~15 GB) and are available on request;
+API keys, endpoints, and account identifiers in configs are redacted.
+
+| Table | Where |
+|---|---|
+| 1 — Main results (5 models × 3 benchmarks × 6 methods) | `results/main/<model>/<benchmark>/<method>/run_00N/` |
+| 2 — Cross-model transfer | `results/transfer/cross_model/`, `cross_benchmark/MedAgentBench/` |
+| 3 — Cross-benchmark transfer | `results/transfer/cross_benchmark/` |
+| 4 — Ablations | `results/ablations/<variant>/` |
+| 5 — Non-medical AgentBench | `results/nonmedical/<env>/` |
+| Learned & frozen skill libraries | `…/run_00N/skills/` and `results/transfer/libraries/` |
+| App. — sensitivity, cross-writer | `results/sensitivity/`, `results/transfer/cross_writer/` |
+
+Reproduce the headline tables straight from the released score files:
+
+```bash
+python results/reproduce_tables.py                 # Table 1 (all models) + Table 5
+python results/reproduce_tables.py gpt-oss-120b     # one model
+```
+
+See [`results/README.md`](results/README.md) for the full directory↔cell map,
+file formats, and notes on two cells built from a superseded seed set.
