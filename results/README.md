@@ -78,16 +78,3 @@ Frozen libraries actually applied at inference are under
 python results/reproduce_tables.py                 # all models (Table 1) + Table 5
 python results/reproduce_tables.py gpt-oss-120b    # one model
 ```
-
-## Known data note
-
-Tables 1, 3, 4, and 5 reproduce from these files exactly, with two minor
-exceptions where the released runs are a slightly different seed set than the
-paper cell was built from (the released numbers are the actual run outputs):
-
-- **Table 1 — GPT-5.4 (low) × MedAgentBench-v2 × GRASP**: released Val\*/Test/OOD =
-  70.0 / 61.5 / 81.7, paper = 71.2 / 63.3 / 80.0. Every other row of that block
-  matches exactly.
-- **Table 2 — Gemini-executor transfer cells**: within ~2 points of the paper
-  (e.g. gpt-oss→Gemini Test 80.2 vs 79.7, OOD 38.3 vs 36.1). The GPT-5.4-executor
-  cells of Table 2 match the paper exactly.
